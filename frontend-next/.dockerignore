@@ -1,0 +1,17 @@
+# Build context is frontend-next/ only. Never send local secrets or caches.
+.env
+.env.*
+!.env.example
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+Dockerfile
+.dockerignore
+.git/
+.gitignore

@@ -1,0 +1,35 @@
+# Root-context ignore file (production compose builds from ./backend and
+# ./frontend-next, which have their own .dockerignore files).
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules/
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.py[cod]
+**/.next/
+**/dist/
+**/var/
+**/eval_reports/
+**/.pytest_cache/
+**/*.egg-info/
+**/coverage/
+**/*.tsbuildinfo
+**/*.log
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+**/*.dump
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+.git/
+.gitignore
+docs/
+README.md
+*.pdf

@@ -1,0 +1,70 @@
+"""Pydantic schemas (request/response contracts)."""
+
+from app.schemas.auth import (
+    LoginRequest,
+    LoginResponse,
+    RegisterRequest,
+    TokenResponse,
+    UserResponse,
+)
+from app.schemas.ai import AiAnalysisResponse, AiDraftApprovalResponse
+from app.schemas.common import ErrorResponse
+from app.schemas.status import (
+    ApiStatusResponse,
+    DatabaseStatusResponse,
+    HealthResponse,
+    RootResponse,
+)
+from app.schemas.ticket import (
+    AssignableUserListResponse,
+    AssignableUserResponse,
+    AssignmentHistoryResponse,
+    AssignRequest,
+    DepartmentCreate,
+    DepartmentListResponse,
+    DepartmentResponse,
+    DepartmentUpdate,
+    MessageCreate,
+    MessageListResponse,
+    MessageResponse,
+    MutationResponse,
+    StatusHistoryResponse,
+    TicketCreate,
+    TicketHistoryResponse,
+    TicketListResponse,
+    TicketResponse,
+    TicketUpdate,
+)
+
+__all__ = [
+    "AiAnalysisResponse",
+    "AiDraftApprovalResponse",
+    "ApiStatusResponse",
+    "AssignableUserListResponse",
+    "AssignableUserResponse",
+    "AssignmentHistoryResponse",
+    "AssignRequest",
+    "DatabaseStatusResponse",
+    "DepartmentCreate",
+    "DepartmentListResponse",
+    "DepartmentResponse",
+    "DepartmentUpdate",
+    "ErrorResponse",
+    "HealthResponse",
+    "LoginRequest",
+    "LoginResponse",
+    "MessageCreate",
+    "MessageListResponse",
+    "MessageResponse",
+    "MutationResponse",
+    "RegisterRequest",
+    "RootResponse",
+    "StatusHistoryResponse",
+    "TicketCreate",
+    "TicketHistoryResponse",
+    "TicketListResponse",
+    "TicketResponse",
+    "TicketUpdate",
+    "TokenResponse",
+    "UserResponse",
+]

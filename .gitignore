@@ -1,0 +1,72 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Local credential and key material (never commit real keys/certs)
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+*.der
+*.npmrc
+*.pypirc
+.netrc
+credential*.json
+credentials*.json
+service-account*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+backend/build/
+backend/dist/
+backend/var/
+backend/eval_reports/
+*.dump
+
+# Node / Vite / Next.js
+node_modules/
+dist/
+dist-ssr/
+.next/
+out/
+*.local
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Databases, logs, temporary and editor artifacts
+*.db
+*.sqlite
+*.sqlite3
+*.log
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp
+*.temp
+*.swp
+*.swo
+Thumbs.db
+desktop.ini
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store

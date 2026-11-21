@@ -1,0 +1,162 @@
+# Production Compose stack for Smart Query Routing System.
+# Compose reads the project-root .env automatically (copy .env.example first).
+# docker-compose.db.yml is intentionally untouched and remains local-DB-only.
+#
+# Data safety: the PostgreSQL data volume below is EXTERNAL and refers to the
+# already-existing volume observed on this host:
+#   smartquerysystem_smartquery_postgres_data
+# Compose will never create, replace or delete it. Never use `down -v` or
+# `docker volume rm` with this project. Back up before every change.
+#
+# Network: "internal" means no host publication for postgres/backend. Outbound
+# internet is still allowed for SMTP/OpenAI/Meta/Google providers.
+
+name: smartquerysystem
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: smartquery-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smartquery_db}
+      POSTGRES_USER: ${POSTGRES_USER:-smartquery}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-REPLACE_WITH_GENERATED_DB_PASSWORD}
+    volumes:
+      - smartquery_postgres_data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smartquery} -d ${POSTGRES_DB:-smartquery_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - internal
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: smartquery-backend:${IMAGE_TAG:-latest}
+    container_name: smartquery-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEBUG: ${DEBUG:-false}
+      # Container DNS name is `postgres`; use localhost only for local dev.
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://smartquery:REPLACE_WITH_GENERATED_DB_PASSWORD@postgres:5432/smartquery_db}
+      TEST_DATABASE_URL: ${TEST_DATABASE_URL:-}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-5}
+      DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-10}
+      DB_POOL_TIMEOUT: ${DB_POOL_TIMEOUT:-30}
+      DB_ECHO: ${DB_ECHO:-false}
+      BACKEND_CORS_ORIGINS: '${BACKEND_CORS_ORIGINS:-["https://smartquery.example.edu"]}'
+      API_V1_PREFIX: ${API_V1_PREFIX:-/api/v1}
+      PROJECT_NAME: ${PROJECT_NAME:-Smart Query Routing System}
+      VERSION: ${VERSION:-1.0.0}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      MIN_PASSWORD_LENGTH: ${MIN_PASSWORD_LENGTH:-12}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      OPENAI_TIMEOUT_SECONDS: ${OPENAI_TIMEOUT_SECONDS:-20}
+      AI_MAX_INPUT_TOKENS: ${AI_MAX_INPUT_TOKENS:-3000}
+      AI_MAX_OUTPUT_TOKENS: ${AI_MAX_OUTPUT_TOKENS:-800}
+      AI_LLM_ATTEMPTS: ${AI_LLM_ATTEMPTS:-2}
+      AI_GRAPH_TIMEOUT_SECONDS: ${AI_GRAPH_TIMEOUT_SECONDS:-60}
+      AI_GRAPH_RECURSION_LIMIT: ${AI_GRAPH_RECURSION_LIMIT:-12}
+      AI_MIN_CONFIDENCE: ${AI_MIN_CONFIDENCE:-0.35}
+      AI_KNOWLEDGE_FILE: ${AI_KNOWLEDGE_FILE:-}
+      AI_RATE_LIMIT_PER_MINUTE: ${AI_RATE_LIMIT_PER_MINUTE:-20}
+      BYOK_ENCRYPTION_KEY: ${BYOK_ENCRYPTION_KEY:-}
+      ALLOW_GLOBAL_OPENAI_FALLBACK: ${ALLOW_GLOBAL_OPENAI_FALLBACK:-false}
+      SLA_HOURS: ${SLA_HOURS:-24}
+      ESCALATION_SWEEP_MINUTES: ${ESCALATION_SWEEP_MINUTES:-60}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      SMTP_USE_SSL: ${SMTP_USE_SSL:-false}
+      SMTP_TIMEOUT_SECONDS: ${SMTP_TIMEOUT_SECONDS:-10}
+      SMTP_ATTEMPTS: ${SMTP_ATTEMPTS:-3}
+      MAIL_FROM: ${MAIL_FROM:-noreply@example.com}
+      EMAIL_NOTIFICATIONS_ENABLED: ${EMAIL_NOTIFICATIONS_ENABLED:-true}
+      WHATSAPP_ENABLED: ${WHATSAPP_ENABLED:-false}
+      WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN:-}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
+      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN:-}
+      WHATSAPP_API_VERSION: ${WHATSAPP_API_VERSION:-v21.0}
+      INTAKE_WEBHOOK_TOKEN: ${INTAKE_WEBHOOK_TOKEN:-}
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
+      GOOGLE_OAUTH_ENABLED: ${GOOGLE_OAUTH_ENABLED:-false}
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-5242880}
+      ALLOWED_UPLOAD_TYPES: ${ALLOWED_UPLOAD_TYPES:-pdf,txt,md}
+      ATTACHMENT_STORAGE_DIR: ${ATTACHMENT_STORAGE_DIR:-/app/var/attachments}
+      # The image entrypoint runs `alembic upgrade head` unless disabled.
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+    expose:
+      - "8000"
+    volumes:
+      - smartquery_attachments_data:/app/var/attachments
+    # Optional loopback-only debugging. Uncomment only on a trusted host:
+    # ports:
+    #   - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - internal
+
+  frontend:
+    build:
+      context: ./frontend-next
+      dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_* is compiled into client JS: changing it requires a rebuild.
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://smartquery.example.edu/api/v1}
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
+    image: smartquery-frontend:${IMAGE_TAG:-latest}
+    container_name: smartquery-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      # Server-side BFF target; internal and never exposed to the browser.
+      API_BASE_URL: ${API_BASE_URL:-http://backend:8000/api/v1}
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://smartquery.example.edu/api/v1}
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - internal
+
+networks:
+  internal:
+    name: smartquerysystem_internal
+    driver: bridge
+
+volumes:
+  smartquery_postgres_data:
+    name: smartquerysystem_smartquery_postgres_data
+    external: true
+  smartquery_attachments_data:
+    name: smartquerysystem_smartquery_attachments_data
