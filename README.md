@@ -10,9 +10,12 @@ WhatsApp adapters, Google OAuth2, auto-routing/escalation, analytics, announceme
 reports, audit, and full-stack Docker Compose packaging. The original Vite app is kept untouched as
 the working reference.
 
-> **No public deployment was performed.** Compose configuration was validated, but images were not
-> built/pushed, no host was contacted, no DNS/provider setting was changed, and no data was modified
-> by the packaging work. Live provider features require real credentials and provider approval.
+> **Deployment addendum (2026-11-22):** A live hackathon deployment was subsequently executed:
+> Next.js BFF on Netlify, FastAPI on Vercel Hobby, and Neon PostgreSQL. See
+> `docs/HACKATHON_DEPLOYMENT_REPORT.md` for exact URLs, deploy IDs, live smoke results, and unresolved
+> gates, and `docs/HACKATHON_DEPLOYMENT_SLIDES.pdf` for the presentation. This does not revoke the
+> formal production governance FAIL in `docs/RELEASE_READINESS.md`. Live provider features still
+> require real credentials and provider approval.
 
 ## Main objectives
 
@@ -196,11 +199,17 @@ cd backend
 pytest
 ```
 
-The final full backend suite result is **187 passed** (17 pre-existing LangSmith deprecation
-warnings). The current migration head is `feedf21773e1`, and the OpenAPI schema registers 41 paths
-after adding ticket attachments and the WhatsApp verification handshake. Automated tests do not
-call paid provider APIs. Exact commands and results are in `docs/TEST_REPORT.md`; the release decision
-and operator actions are in `docs/RELEASE_READINESS.md`.
+The final full backend suite result is **229 passed, 17 warnings in 264.12s (0:04:24)**. The warnings
+are pre-existing LangSmith `asyncio.iscoroutinefunction` deprecations. The suite includes the
+FR-04b/FR-13 instructor-routing tests, FR-06 conditional-polling tests, FR-07 serverless-escalation
+tests, FR-09 manual escalation/de-escalation history & notification tests, FR-14 auth-audit tests,
+token-expiry assertions, ticket-grounded demo AI consistency tests, and attachment/malware tests. The
+focused security/auth/malware/cron run is `64 passed, 17 warnings in 27.06s`, and the focused
+escalation/ticket/notification/audit run is `42 passed, 17 warnings in 70.95s`. The current migration head is
+`feedf21773e1`, and the OpenAPI schema registers 41 paths after adding ticket attachments and the
+WhatsApp verification handshake. Automated tests do not call paid provider APIs. Exact commands and
+results are in `docs/TEST_REPORT.md`; the release decision and operator actions are in
+`docs/RELEASE_READINESS.md`.
 
 ### 4. Provision the first local administrator
 
@@ -292,7 +301,9 @@ npm run build
   code/config only; live provider verification and deployment remain pending.
 - Google OAuth and BYOK were added in Phase 7. Refresh tokens, password reset, email verification
   and user-creation CRUD are still future work.
-- Automated test suites for the Next.js frontend remain manual/live plus static checks.
+- Automated test suites for the Next.js frontend were manual/live plus static checks during
+  Phase 5; a working-tree Playwright + axe suite was added later (see the 2026-11-23 evidence
+  addendum below).
 
 ## Phase 6 implementation status (historical)
 
@@ -371,49 +382,113 @@ BYOK keys.
   `docker-compose.yml`, health checks, internal networking, migration-safe startup, external
   PostgreSQL volume reuse and root env examples with no secrets baked into images.
 - **Verification recorded:** migration head `feedf21773e1`; 41 OpenAPI paths; final full backend
-  suite **187 passed**; frontend typecheck/lint/build passed; both Docker images built and smoke-tested;
-  Compose config validation passed for both files. See `docs/TEST_REPORT.md` and
-  `docs/RELEASE_READINESS.md`.
+  suite **229 passed**; frontend typecheck/lint/Vitest (`3 passed`)/build (`13/13` pages) passed;
+  Playwright + axe E2E **12 passed (1.5m)**; both Docker images built and smoke-tested; Compose
+  config validation passed for both files. See `docs/TEST_REPORT.md` and `docs/RELEASE_READINESS.md`.
 
 **Limits and blocked checks**
 
-- **No public deployment was performed and public deployment is not approved.** The backend image
-  was built locally; no image was pushed, no host was contacted, no DNS/TLS/provider setting was
-  changed, and no production data was modified for this packaging work.
+- **Live hackathon deployment was executed after this historical packaging audit.** Formal production
+  approval is still not granted. See `docs/HACKATHON_DEPLOYMENT_REPORT.md` for the actual Netlify,
+  Vercel, and Neon endpoints and results.
 - Live SMTP, WhatsApp, Google OAuth and OpenAI evaluation checks are **blocked pending real
   credentials/provider setup** and were not performed.
 - The evaluation harness uses a synthetic 24-record dataset. Its results test pipeline wiring and
   guardrails; they are not real university accuracy or performance.
-- The Next.js app still has no committed e2e/accessibility test suite. Automated API, static UI,
-  Docker build, and Compose checks are consolidated in `docs/TEST_REPORT.md`.
 - BYOK shifts API cost to users; it does not satisfy the original zero-cost tooling constraint.
+
+## Verification evidence addendum (2026-11-23)
+
+This addendum reconciles stale test/QA claims with the final local evidence. It changes no
+credentials, registry, deployment, or production data and does **not** revoke the formal
+`FAIL — DO NOT DEPLOY` decision in `docs/RELEASE_READINESS.md`.
+
+- **Full backend suite (final):** from `backend/`, `.\.venv\Scripts\python.exe -m pytest -q` →
+  `229 passed, 17 warnings in 264.12s (0:04:24)`. Earlier 187/202/218/225 counts in older notes are
+  historical. The warnings are pre-existing LangSmith deprecations. Focused security/auth/malware/cron
+  run: `64 passed, 17 warnings in 27.06s`; focused escalation/ticket/notification/audit run:
+  `42 passed, 17 warnings in 70.95s`.
+- **Browser E2E and accessibility:** `npm run test:e2e` in `frontend-next/` (its `pretest`
+  `next build` passed) → `12 passed (1.5m)`. The working-tree Playwright + axe suite in
+  `frontend-next/e2e/` covers login, student workspace, ticket detail, and manual
+  escalation/de-escalation history & notifications; axe reported **no serious or critical violations**
+  on those pages. Vitest polling-hook unit tests (`3 passed`), typecheck, lint, and build (`13/13`
+  pages) passed. This is local verification, not a claim about the hosted deployment.
+- **FR-04b / FR-13 instructor routing:** deterministic, staff-only assignment implemented in
+  `app/services/instructor_routing.py`; active `InstructorLeave` windows are excluded, HOD/admin
+  accounts are never auto-assigned, and overrides remain audited HOD/admin actions. Covered by
+  `backend/tests/test_instructor_routing.py`. There is no in-app leave-approval workflow.
+- **FR-06 status tracking:** conditional `GET /api/v1/tickets/{id}/updates` with ETag/`304 Not
+  Modified` plus the frontend `useTicketStatusPolling` hook. This is **polling, not SSE/push**;
+  covered by `tests/test_ticket_updates.py`, `useTicketStatusPolling.test.tsx` and an E2E case.
+- **FR-07 escalation:** secret-protected `POST /api/v1/tickets/escalation/sweep` (`X-Cron-Secret`,
+  constant-time check) and an hourly schedule in `backend/vercel.json`; covered by
+  `backend/tests/test_escalation_serverless.py`. **Live hosted cron execution is NOT VERIFIED**,
+  and no host or secret was changed.
+- **FR-14 auth audit:** password register/login success and failure audit events are emitted without
+  recording passwords or secrets (`backend/tests/test_auth_audit.py`).
+- **Token lifetime:** `backend/tests/test_token_expiry.py` asserts the production default of 60
+  minutes; the 1440-minute lifetime is test-only and must not be treated as a production setting.
+- **Backup/restore rehearsal:** `docs/evidence/backup_restore_rehearsal.json` records `PASS` on a
+  disposable `postgres:16-alpine` container at `127.0.0.1:55432`; schema hash
+  `ed7d1ab744886956c3e35ddde4674a05b01da26ef8313199b2c741e35917664b` and record hash
+  `00e07e9f6182a27c59db5e2b9b0d51055011c13029485c4647b9ba4cc994d419` matched after restore,
+  stale row count went 1 → 0, and the container was removed. Production was not touched.
+- **Malware scanning:** `docs/evidence/malware_scan_verification.json` records
+  `PASS_LOCAL_INTEGRATION_ONLY`. Real ClamAV (`clamav/clamav:stable`, digest
+  `sha256:64e30c0bf976198024deb3dc6d5cfe2485fb969c0f73549ba0fdb364b9469614`) returned `OK`/exit 0
+  for a clean file and `Eicar-Test-Signature FOUND`/exit 1 for an in-container base64 EICAR fixture.
+  A Windows-mounted EICAR fixture **failed** and is not claimed as a pass. Scanning is optional and
+  `MALWARE_SCAN_ENABLED=false` by default; no scanner was deployed or configured.
+- **Secret audit:** `docs/evidence/secret_audit.json` and
+  `docs/SECRET_AUDIT_REMEDIATION_PLAN.md` report 307 tracked files, 16 workspace potential
+  secrets, 12 git-history potential secrets, 453 docker-image potential secrets and 4 matches
+  against the current local environment. No value was printed or copied and **no rotation or
+  revocation was performed**; this remains an operator action and a release gate.
+- **Dependencies:** `docs/evidence/npm_audit_summary.json` reports 6 vulnerable packages
+  (2 moderate, 2 high, 2 critical): `next`/`postcss`, `zod`, and the dev-toolchain
+  `vitest`/`@vitest/mocker`/`tinypool`. Fix targets are Next.js 16.4.6, Zod 4.6.7 and Vitest 4.1.12;
+  none was applied without approval. Full JSON and dependency-path captures are in `docs/evidence/`.
+- **Registry:** the existing `ghcr.io/raphicsdigitalsolutions/smart-query-system:latest` package is
+  confirmed present and anonymously pullable at digest
+  `sha256:417e017081a460adfe310236e13b3e117cb972c11c5c93370968aa866a2b0f0f`
+  (`docs/evidence/ghcr_readonly_investigation.json`). Publishing current local changes still requires
+  `write:packages`; no registry was modified. The production/public release verdict remains **FAIL**.
+- **Operator detail:** `docs/FINAL_RELEASE_BLOCKERS.md` and `docs/OPERATOR_ACTION_CHECKLIST.md`
+  classify every remaining blocker with prerequisites, risks, exact commands and verification steps.
 
 ## Deployment and provider status
 
-> **No public deployment was performed.** Use `docs/DEPLOYMENT_GUIDE.md` for the operator-run
-> build, migration, backup, rollback, HTTPS and provider-configuration steps. Compose config and both
-> local image builds passed; disposable-container health, migration, and BFF smoke checks are recorded
-> in `docs/TEST_REPORT.md`. The full stack was not started against the existing production data
-> volume, and live provider verification remains blocked.
+> **Live hackathon deployment:** the FastAPI backend is on Vercel Hobby, the Next.js BFF is on Netlify
+> Free, and PostgreSQL is hosted on Neon. Exact URLs, deploy IDs, smoke results, serverless deviations,
+> and unresolved gates are in `docs/HACKATHON_DEPLOYMENT_REPORT.md`. Use `docs/DEPLOYMENT_GUIDE.md`
+> for operator-run build, migration, backup, rollback, HTTPS, and provider configuration steps.
+> Live provider verification remains blocked.
 
 ## Migration considerations
 
 - The Vite app stores its JWT only in module memory, so a reload signs the user out. The Next.js BFF
   stores it in an HttpOnly cookie, so a session survives reloads for up to the token lifetime
-  (60 minutes by default). Users must sign in once in Next.js because the Vite token is not shared.
+  (60 minutes by default in production; `tests/test_token_expiry.py` asserts this and isolates the
+  test-only 1440-minute lifetime). Users must sign in once in Next.js because the Vite token is not
+  shared.
 - The BFF means browser requests are same-origin, so the existing FastAPI CORS allowlist for Vite
   ports does not need changing.
 - Backend authorization remains authoritative; Next.js role guards only improve UX.
-- `npm audit` reported 3 advisories (1 moderate, 2 high): PostCSS advisories reached through
-  Next.js 15 and a Zod advisory requiring Zod 4. `npm audit fix --force` would upgrade to Next.js 16
-  and Zod 4, so it was not applied during Phase 5.
+- The current `npm audit` result is **6 vulnerable packages (2 moderate, 2 high, 2 critical)**,
+  recorded in `docs/evidence/npm_audit_summary.json` with full JSON captures in `docs/evidence/`.
+  Fixes involve Next.js 16.4.6, Zod 4.6.7 and Vitest 4.1.12 migrations, so none was applied without
+  approval. The Phase 5 note of 3 advisories is historical.
 
 ## Future development
 
 See [docs/DEVELOPMENT_ROADMAP.md](docs/DEVELOPMENT_ROADMAP.md). Phase 7 added the integration and
-packaging work; remaining items are live provider verification, operator-approved deployment, a
-committed frontend e2e/accessibility suite, a real labelled evaluation dataset, and optional account
-features such as refresh tokens, password reset and user CRUD.
+packaging work, and the 2026-11-23 reconciliation added working-tree Playwright + axe E2E coverage.
+Remaining items are live provider verification, operator-approved deployment, verification of the
+hosted escalation cron, secret rotation/revocation, approved Next.js/Zod/Vitest upgrades, `write:packages`
+to publish current local changes (the existing `smart-query-system:latest` package is already present
+and pullable), a real labelled evaluation dataset, and optional account features such as refresh
+tokens, password reset and user CRUD. True SSE/WebSocket push is not planned or claimed.
 
 ## Documentation
 
@@ -426,3 +501,22 @@ features such as refresh tokens, password reset and user CRUD.
 - [Deployment guide](docs/DEPLOYMENT_GUIDE.md)
 - [Master requirements checklist](docs/MASTER_REQUIREMENTS_CHECKLIST.md)
 - [Test report](docs/TEST_REPORT.md)
+- [Authoritative completion matrix](docs/AUTHORITATIVE_COMPLETION_MATRIX.md)
+- [Release readiness](docs/RELEASE_READINESS.md)
+- [Secret audit and remediation plan](docs/SECRET_AUDIT_REMEDIATION_PLAN.md)
+- [Final release blockers](docs/FINAL_RELEASE_BLOCKERS.md)
+- [Operator action checklist](docs/OPERATOR_ACTION_CHECKLIST.md)
+- [Final submission report](docs/FINAL_SUBMISSION_REPORT.md)
+- [Final requirements traceability](docs/FINAL_REQUIREMENTS_TRACEABILITY.md)
+- [Final demo guide](docs/FINAL_DEMO_GUIDE.md)
+- [Final submission checklist](docs/FINAL_SUBMISSION_CHECKLIST.md)
+
+## 2026-11-24 Final Submission Reconciliation
+
+- All 6 frontend dependency vulnerabilities (`next`/`postcss`, `zod`, `vitest`, `@vitest/mocker`, `tinypool`) are remediated (`next@16.4.6`, `zod@4.6.7`, `vitest@4.1.12`, `eslint-config-next@16.4.6`); `npm audit` and `npm audit --omit=dev` both report **0 vulnerabilities**.
+- Full verification re-run after upgrades: backend **229 passed (292.01s)**, `tsc --noEmit` / `eslint .` clean, Vitest **3 passed**, `next build --webpack` **PASS**, Playwright + Axe **12 passed (2.2m)**, disposable PostgreSQL backup/restore **PASS**, and backend/frontend Docker image builds **PASS**.
+- **Single Combined Production Image (`Dockerfile` + `docker/supervisord.conf`):** Built (`python:3.11-slim` + `node:20-slim` + Supervisor, Next.js 16 + FastAPI in one container, non-root UID 10001, zero devDependencies/secrets), locally smoke-verified (`api_health=200`, `internal_backend_health=healthy`, `/login` `200`, `/api/auth/session` `200`, registration `HttpOnly`/`Secure` cookie + authenticated `/api/backend/auth/me` `200`), and published to Docker Hub:
+  - Public Repository: `https://hub.docker.com/r/raphicsdigitalsolutions/smart-query-system`
+  - Pull Command: `docker pull raphicsdigitalsolutions/smart-query-system:latest`
+  - Verified Tags & Digest: `latest` & `v1.0.0` (`sha256:e9ed70810b3f9e5c6bb5ee1e7fb83847acb423c18a2bb506d9e83a5368450430`, anonymous manifest/pull verified)
+- **University Submission Archive:** `submission/SmartQuerySystem_Final_Submission/` and `submission/SmartQuerySystem_Final_Submission.zip` (clean source, docs, env examples, evidence, and migrations with no `.env` secrets, `node_modules`, `.venv`, or DB dumps).

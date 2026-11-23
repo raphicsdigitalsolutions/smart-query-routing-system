@@ -1,8 +1,9 @@
 # Phase 7 Test Report — Smart Query Routing System
 
-This report records commands that were actually executed in this workspace. It does **not** claim
-live Google, SMTP, Meta WhatsApp, or OpenAI verification. Those checks require real provider
-credentials that were not supplied. No public deployment was performed.
+This report records the historical Phase 7 commands that were actually executed in this workspace.
+It does **not** claim live Google, SMTP, Meta WhatsApp, or OpenAI verification; those checks require
+real provider credentials that were not supplied. A later hackathon deployment and its live smoke
+checks are recorded separately in `docs/HACKATHON_DEPLOYMENT_REPORT.md`.
 
 Test host: Windows/PowerShell. Backend commands were run from `backend/` with the project virtual
 environment. Frontend commands were run from `frontend-next/`. Docker commands were run from the
@@ -12,7 +13,12 @@ repository root.
 
 | Area | Final/local result | Notes |
 | --- | --- | --- |
-| Backend automated suite | **187 passed, 17 warnings in 294.79s** | Final run after the release-hardening changes. Warnings are pre-existing LangSmith `asyncio.iscoroutinefunction` deprecations. |
+| Backend automated suite | **229 passed, 17 warnings in 264.12s (0:04:24)** | FINAL full run from `backend/`: `.\.venv\Scripts\python.exe -m pytest -q`. Warnings are pre-existing LangSmith `asyncio.iscoroutinefunction` deprecations. Older 187/202/218/225 counts are historical. |
+| Focused escalation, ticket, notification & audit tests | **42 passed, 17 warnings in 70.95s (0:01:10)** | `tests/test_escalation.py` (including manual escalation/de-escalation history, audit & deduplicated permission-scoped notifications), `tests/test_escalation_serverless.py`, `tests/test_tickets.py`, `tests/test_ticket_updates.py`, `tests/test_notifications.py`, `tests/test_audit.py`. |
+| Focused AI consistency, agent, BYOK, knowledge & evaluation tests | **50 passed, 17 warnings in 32.74s** | `tests/test_ai_consistency.py`, `tests/test_ai_agents.py`, `tests/test_ai_api.py`, `tests/test_byok.py`, `tests/test_knowledge.py`, `tests/test_agent_evaluation.py`. |
+| Focused malware/attachment tests | **10 passed, 17 warnings in 7.63s** | `tests/test_malware_scan_service.py` + `tests/test_attachment_malware.py`; integrate with a real ClamAV image locally (see §6.1). |
+| Browser E2E + accessibility | **12 passed (1.5m)** | `npm run test:e2e` in `frontend-next/`; `pretest` `next build` passed (13/13 pages). Playwright + axe; no serious/critical axe violations on login, student workspace or ticket detail; verifies escalation/de-escalation history and staff notifications (see §4.1). |
+| Frontend polling unit tests | **3 passed (273ms tests / 14.30s run)** | Vitest `useTicketStatusPolling.test.tsx`; typecheck (`tsc --noEmit`) and lint (`eslint .`) passed with 0 errors/warnings (see §4.1). |
 | Backend compile | Passed | `python -m compileall -q app tests evaluations`, no output. |
 | Migration state | Head `feedf21773e1`; no drift | `alembic current` and `alembic check` against the local development database. |
 | OpenAPI | **41 paths** | Confirmed from `app.main.app.openapi()` after adding ticket attachments and the WhatsApp verification handshake. |
@@ -21,8 +27,14 @@ repository root.
 | Docker frontend image | Built successfully | First smoke exposed a missing-runtime-TypeScript defect; the Dockerfile was fixed, the image was rebuilt, and the final container passed health checks. |
 | Compose validation | Passed | Both `docker-compose.yml` and `docker-compose.db.yml` pass `config`; the full-stack file also passed `config --quiet` after the attachment volume was added. |
 | Isolated container smoke / persistence | Passed | Disposable containers/volumes were used. Backend and frontend became healthy, Alembic head was applied in-container, `alembic_version` survived a PostgreSQL restart, BFF session/401 checks passed, and all scratch resources were removed. |
+| Backup/restore rehearsal | PASS (local disposable) | `docs/evidence/backup_restore_rehearsal.json`; production not touched (see §6.1). |
+| Secret audit | Findings recorded; no rotation | `docs/evidence/secret_audit.json` + `docs/SECRET_AUDIT_REMEDIATION_PLAN.md` (see §6.1). |
+| npm audit | 6 vulnerable packages (2 moderate, 2 high, 2 critical); production-only 3 | `docs/evidence/npm_audit_full_2026-11-23.json`, `docs/evidence/npm_audit_prod_2026-11-23.json`, `docs/evidence/npm_audit_summary.json`; not auto-fixed pending approval (see §6.2). |
 | Live provider checks | Blocked | Real Google OAuth, SMTP, Meta WhatsApp, and OpenAI credentials were not available. |
-| Public deployment | Not performed / not approved | No host, DNS, TLS, registry push, or provider configuration was changed. |
+| Live hosted escalation cron | NOT VERIFIED | Code/config local-verified only; see §6.1. |
+| GHCR package existence / anonymous pull | Verified read-only | `docs/evidence/ghcr_readonly_investigation.json`: package exists, anonymous pull capable, digest `sha256:417e017081a460adfe310236e13b3e117cb972c11c5c93370968aa866a2b0f0f` matches recorded/local. |
+| GHCR publication of current changes | Blocked | Missing `write:packages`; no registry write or push attempted (see §6.2). |
+| Public deployment | Historical audit: not performed; later hackathon deployment executed | Formal approval still open; release verdict remains FAIL. See `docs/HACKATHON_DEPLOYMENT_REPORT.md` and `docs/RELEASE_READINESS.md`. |
 
 ## 2. Backend commands and exact results
 
@@ -33,20 +45,21 @@ cd backend
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Result:
+Result (final full run; this is the current count):
 
 ```text
-........................................................................ [ 46%]
-........................................................................ [ 92%]
-............                                                             [100%]
 ============================== warnings summary ===============================
 .venv\Lib\site-packages\langsmith\_internal\_beta_decorator.py:92: 17 warnings
   C:\Users\user\OneDrive\Desktop\SmartQuerySystem\backend\.venv\Lib\site-packages\langsmith\_internal\_beta_decorator.py:92: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
     if asyncio.iscoroutinefunction(func):
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-187 passed, 17 warnings in 294.79s (0:04:54)
+225 passed, 17 warnings in 265.61s (0:04:25)
 ```
+
+The warnings are pre-existing LangSmith `asyncio.iscoroutinefunction` deprecations. Earlier
+`187 passed` and `202 passed` lines elsewhere in this report are explicitly historical Phase 7
+results, not the current total.
 
 ### 2.2 Focused regression runs
 
@@ -61,7 +74,9 @@ These were run before the final full-suite rerun and cover the Phase 7 risk area
 | `python -m pytest -q tests/test_ai_api.py::test_ai_runs_are_rate_limited_per_user` | `1 passed` |
 | `python -m pytest -q tests/test_attachments.py tests/test_integrations.py tests/test_tickets.py` | `32 passed, 17 warnings in 43.34s` |
 | `python -m pytest -q tests/test_release_hardening.py tests/test_byok_rotation.py tests/test_notifications.py` | `38 passed, 17 warnings in 20.72s` |
+| `python -m pytest -q tests/test_malware_scan_service.py tests/test_attachment_malware.py` | `10 passed, 17 warnings in 7.63s` (final focused malware/attachment run; see §6.1 for the real-ClamAV evidence). |
 | Staff-assignable-user regression tests in `test_tickets.py` | Passed; the staff AI 403 regression is covered by the final full suite. |
+| `tests/test_instructor_routing.py`, `tests/test_ticket_updates.py`, `tests/test_escalation_serverless.py`, `tests/test_auth_audit.py`, `tests/test_token_expiry.py` | Passed in the final full suite; scope and caveats are summarised in §6.1. |
 
 ### 2.3 Compile, migration, and route checks
 
@@ -91,6 +106,30 @@ users=1, departments=0, tickets=0, messages=0, analyses=0, status_history=0,
 audit=0, knowledge=0, notifications=0, announcements=0, leave=0,
 agent_runs=0, user_api_keys=0
 ```
+
+### 2.5 FR-04b / FR-13 implementation verification
+
+These runs were added after deterministic instructor routing and leave-aware exclusion were
+implemented. The historical Phase 7 results above are left unchanged.
+
+| Command | Result |
+| --- | --- |
+| `python -m pytest -q tests/test_instructor_routing.py` (RED, before implementation) | `12 failed, 3 passed, 17 warnings in 14.32s` |
+| `python -m pytest -q tests/test_instructor_routing.py` (GREEN, after implementation) | `15 passed, 17 warnings in 11.67s` |
+| `python -m pytest -q tests/test_instructor_routing.py tests/test_tickets.py tests/test_integrations.py tests/test_notifications.py tests/test_leave.py` | `57 passed, 17 warnings in 53.54s` |
+| `python -m pytest -q` | `202 passed, 17 warnings in 142.21s (0:02:22)` — **historical Phase 7 run only**, superseded by the final `225 passed` run in §2.1. |
+| `python -m alembic heads` | `feedf21773e1 (head)` — no migration added |
+| `npm run typecheck` | Passed |
+| `npm run lint` | Passed |
+| `npm run build` | Passed |
+
+Coverage includes eligible selection, active-leave exclusion, the exclusive leave end boundary,
+inactive/HOD/admin exclusion, workload ranking, stable tie-breaks, assignment/status history, audit
+events, exactly-once instructor notification, no-eligible-instructor fallback, manual override,
+unauthorized assignment rejection, explicit-department behavior, email/WhatsApp intake, and
+manual-assignment auto-reply preservation. Routing is deterministic and staff-only: HOD/admin
+accounts are never auto-assigned, active `InstructorLeave` windows are excluded, and all overrides
+are audited. These tests are included in the final 225-test suite.
 
 ## 3. Evidence by requirement area
 
@@ -125,6 +164,26 @@ npm run build       # exit 0
 The BFF now forwards multipart uploads as raw bytes so binary files are not corrupted by UTF-8 text
 decoding. No live authenticated upload was exercised against a running backend; the backend path is
 covered by the API tests in §2.
+
+### 4.1 Browser E2E and accessibility (2026-11-23)
+
+The earlier statement that no e2e/accessibility suite existed is superseded. The working-tree
+Playwright + axe suite lives in `frontend-next/e2e/` (`auth.spec.ts`, `tickets.spec.ts`,
+`a11y.spec.ts`, `helpers.ts`). It is intentionally uncommitted because this reconciliation made no
+commit.
+
+```powershell
+cd frontend-next
+npm run test:e2e
+```
+
+- `pretest` ran `next build` successfully.
+- `11 passed (1.3m)`.
+- axe reported **no serious or critical violations** on the login page, the student workspace and
+  ticket detail.
+- `useTicketStatusPolling.test.tsx` (Vitest) covers the polling hook's change detection; the E2E
+  ticket spec also exercises a status-change/polling case.
+- This is local verification only; no hosted/production browser run was performed.
 
 ## 5. Docker and Compose commands and results
 
@@ -215,7 +274,7 @@ These checks were run after the security remediation and are additional to the e
 | Check | Command / method | Result |
 | --- | --- | --- |
 | Strict production config regression | `.\.venv\Scripts\python.exe -m pytest -q tests/test_release_hardening.py tests/test_byok_rotation.py tests/test_notifications.py` | `38 passed, 17 warnings in 20.72s`. Covers placeholder/weak JWT and Fernet rejection, unsafe production settings, internal Compose DB exception, safe BYOK rotation dry-run/commit, undecryptable-row abort, and sanitized provider errors. |
-| Full backend suite | `.\.venv\Scripts\python.exe -m pytest -q` | `187 passed, 17 warnings in 294.79s`. |
+| Full backend suite | `.\.venv\Scripts\python.exe -m pytest -q` | Historical release-hardening run: `187 passed, 17 warnings in 294.79s`. The FINAL full run is `225 passed, 17 warnings in 265.61s (0:04:25)` (§2.1). |
 | Frontend static checks | `npm run typecheck`; `npm run lint`; `npm run build` | All exit 0; `next build` compiled and generated 13/13 static pages in 35.1s. |
 | Compose validation | `docker compose -f docker-compose.db.yml config --quiet`; `docker compose -f docker-compose.yml config --quiet` | Both exit 0; `docker compose version` reported v5.6.1. |
 | Redacted current-tree secret scan | Python scanner over 310 non-generated text files; pattern classes and locations only, no values | Three findings, all in `backend/.env`: `OPENAI_API_KEY` at line 42 (key pattern plus non-placeholder assignment) and `BYOK_ENCRYPTION_KEY` at line 51 (Fernet-key shape). Test fixtures and `.env.example` placeholders were classified as informational. No secret value was printed. |
@@ -223,7 +282,60 @@ These checks were run after the security remediation and are additional to the e
 | Backend image secret/content audit | `docker run --rm --entrypoint sh smartquery-backend:release-audit -c 'find ...'` and `grep -RIl ...` | No `.env*`, key/certificate files, database files, logs, backups, temp files, generated reports, attachment files, tests, `.pyc` files, or secret-pattern matches. Runtime user `app`, workdir `/app`. |
 | Frontend image secret/content audit | `docker run --rm --entrypoint sh smartquery-frontend:release-audit -c 'find ...'` and `grep -RIl ...` | No `.env*`, key/certificate files, npmrc, logs, backups, temp files, or secret-pattern matches. Runtime user `nextjs`, workdir `/app`. |
 
-The two `backend/.env` findings are treated as compromised. They were not read into output, copied, changed, rotated, or deleted by this audit. Rotation remains an operator action.
+The two `backend/.env` findings are treated as compromised. They were not read into output, copied, changed, rotated, or deleted by this audit. Rotation remains an operator action. The broader redacted secret audit recorded in `docs/evidence/secret_audit.json` supersedes the earlier scan counts; its summary is in §6.1.
+
+## 6.1 Requirement-area verification added 2026-11-23
+
+These items reconcile stale claims against the final local evidence. They do not revoke the
+`FAIL — DO NOT DEPLOY` governance decision in `docs/RELEASE_READINESS.md`.
+
+| Area | Verified local evidence | Caveat |
+| --- | --- | --- |
+| Full backend suite | `225 passed, 17 warnings in 265.61s (0:04:25)` from `backend/` (§2.1); focused malware/attachment run `10 passed, 17 warnings in 7.63s`. | Warnings are pre-existing LangSmith deprecations. |
+| FR-04b / FR-13 instructor routing | `tests/test_instructor_routing.py`: deterministic, staff-only selection; active `InstructorLeave` windows excluded; HOD/admin never auto-assigned; audited overrides. Included in final suite (§2.5). | No in-app leave-approval workflow. |
+| FR-06 status tracking | `GET /api/v1/tickets/{id}/updates` returns an ETag/`304 Not Modified` snapshot; frontend `useTicketStatusPolling` hook and `useTicketStatusPolling.test.tsx`; E2E polling case (§4.1). | **Polling only — not SSE/WebSocket push.** |
+| FR-07 escalation | Secret-protected `POST /api/v1/tickets/escalation/sweep` with `X-Cron-Secret` constant-time check, hourly entry in `backend/vercel.json`, tests in `tests/test_escalation_serverless.py`. | **Live hosted cron execution NOT VERIFIED**; hosted secret configuration unverified. |
+| FR-14 auth audit | `tests/test_auth_audit.py` covers password register/login success and failure audit events. | No password or secret is written to audit rows. |
+| Token expiry | `tests/test_token_expiry.py` asserts the production default of 60 minutes. | 1440-minute lifetime is test-only, not a production setting. |
+| Backup/restore | `docs/evidence/backup_restore_rehearsal.json`: status `PASS`; disposable `postgres:16-alpine` at `127.0.0.1:55432`; schema hash `ed7d1ab744886956c3e35ddde4674a05b01da26ef8313199b2c741e35917664b` and record hash `00e07e9f6182a27c59db5e2b9b0d51055011c13029485c4647b9ba4cc994d419` matched after restore; stale row count 1 → 0; container removed. | Production/DB volume untouched. Local rehearsal only. |
+| Malware scanning | `docs/evidence/malware_scan_verification.json`: `PASS_LOCAL_INTEGRATION_ONLY`; real `clamav/clamav:stable` digest `sha256:64e30c0bf976198024deb3dc6d5cfe2485fb969c0f73549ba0fdb364b9469614` gave clean `OK`/exit 0 and in-container base64 EICAR `Eicar-Test-Signature FOUND`/exit 1; fail-closed behavior covered by tests. | A Windows-mounted EICAR fixture failed and is **not** claimed as a pass. `MALWARE_SCAN_ENABLED=false` by default; not deployed. |
+| Secret audit | `docs/evidence/secret_audit.json` + `docs/SECRET_AUDIT_REMEDIATION_PLAN.md`: 307 tracked files, 16 workspace potential secrets, 12 git-history potential secrets, 453 docker-image potential secrets, 4 current-local-env matches. | No value printed/copied; **no rotation or revocation performed**. |
+| npm audit | `docs/evidence/npm_audit_summary.json`: 6 vulnerable packages (2 moderate, 2 high, 2 critical) across 10 GHSA advisories; full/production JSON and dependency paths captured 2026-11-23. | Not auto-fixed: fixes need approved Next.js 16.4.6, Zod 4.6.7 and Vitest 4.1.12 migrations (§6.2). |
+| Registry | GHCR package existence and anonymous pull verified read-only; publication of current local changes blocked by missing `write:packages`. | No registry or image was modified; no push attempted (§6.2). |
+
+### 6.2 Final dependency and registry reconciliation (2026-11-23)
+
+Commands executed from `frontend-next/` (using `cmd /c` for reliable JSON redirection on Windows):
+
+```powershell
+cmd /c "npm audit --json > ..\docs\evidence\npm_audit_full_2026-11-23.json"
+cmd /c "npm audit --omit=dev --json > ..\docs\evidence\npm_audit_prod_2026-11-23.json"
+npm explain next postcss vitest @vitest/mocker tinypool zod | Out-File -FilePath ..\docs\evidence\npm_dependency_paths_2026-11-23.txt -Encoding utf8
+```
+
+Results: full audit `6` vulnerable packages (2 moderate, 2 high, 2 critical); production-only audit
+`3` (`next`, `postcss`, `zod`). Installed versions: `next@15.5.29` with nested
+`postcss@8.4.31`, `zod@3.25.76`, `vitest@3.2.4`, `@vitest/mocker@3.2.4`, `tinypool@1.1.1`.
+Fix targets: `next@16.4.6` (pins `postcss@8.5.23`), `zod@4.6.7`, `vitest@4.1.12` (resolves the
+mocker/tinypool findings). None was applied; approval is required. Node was `v22.23.2`, npm `10.9.0`.
+
+Read-only GHCR evidence (`docs/evidence/ghcr_readonly_investigation.json`) used an anonymous token,
+manifest/blob requests and `docker buildx imagetools inspect`: challenge `401`, token `200`,
+manifest `200`, OCI index digest `sha256:417e017081a460adfe310236e13b3e117cb972c11c5c93370968aa866a2b0f0f`,
+matching the recorded and local digests. No token value was stored; no push or registry write was
+attempted. This supersedes the earlier "image URL unavailable" wording for that package only, not
+the `write:packages` blocker for publishing current changes.
+
+### 6.3 Escalation history & notification verification (2026-11-23)
+
+- Full backend suite: `229 passed, 17 warnings in 264.12s (0:04:24)` (`.\.venv\Scripts\python.exe -m pytest -q`).
+- Focused escalation/ticket/notification/audit run: `42 passed, 17 warnings in 70.95s` (`tests/test_escalation.py`, `tests/test_escalation_serverless.py`, `tests/test_tickets.py`, `tests/test_ticket_updates.py`, `tests/test_notifications.py`, `tests/test_audit.py`).
+- Focused AI consistency/agents/BYOK/knowledge/evaluation run: `50 passed, 17 warnings in 32.74s`.
+- Focused security, auth, attachment/malware, and serverless cron run: `64 passed, 17 warnings in 27.06s` (`tests/test_release_hardening.py`, `tests/test_byok_rotation.py`, `tests/test_auth.py`, `tests/test_auth_audit.py`, `tests/test_attachments.py`, `tests/test_malware_scan_service.py`, `tests/test_attachment_malware.py`, `tests/test_escalation_serverless.py`, `tests/test_token_expiry.py`).
+- Re-verified disposable backup/restore rehearsal (`$env:DEBUG='false'; .\scripts\backup_restore_rehearsal.ps1` at `2026-11-23T16:57:24Z`): status `PASS`, schema hash `ed7d1ab744886956c3e35ddde4674a05b01da26ef8313199b2c741e35917664b`, record hash `00e07e9f6182a27c59db5e2b9b0d51055011c13029485c4647b9ba4cc994d419`, stale row count `1 -> 0`, `production_touched: false`.
+- Re-verified local ClamAV container (`clamav/clamav:stable`, `ClamAV 1.5.5/28191`): clean fixture `OK` (exit `0`), EICAR fixture `Eicar-Test-Signature FOUND` (exit `1`).
+- Read-only GHCR verification (`docker buildx imagetools inspect ghcr.io/raphicsdigitalsolutions/smart-query-system:latest`): digest `sha256:417e017081a460adfe310236e13b3e117cb972c11c5c93370968aa866a2b0f0f` matches `docs/evidence/ghcr_readonly_investigation.json`.
+- Frontend static checks & E2E: `npm run typecheck`, `npm run lint` (`0` errors/warnings), `npm run test` (`3 passed` Vitest), `npm run build` (`13/13` pages), and `npm run test:e2e` (`12 passed (1.5m)` including Playwright escalation/de-escalation recorded history and staff notifications).
 
 ## 7. Explicitly blocked checks
 
@@ -233,18 +345,28 @@ The two `backend/.env` findings are treated as compromised. They were not read i
 | Live Google OAuth sign-in | Requires a real Google Cloud OAuth client ID and registered JavaScript origin. |
 | Live SMTP delivery | Requires real SMTP credentials and a verified `MAIL_FROM` domain. |
 | Live Meta WhatsApp send and webhook registration | Requires a real Meta Cloud API token, phone number ID, and webhook verification token. |
-| Public deployment | Not approved. No host, DNS, TLS, image registry, or monitoring configuration was changed. |
-| Browser-level accessibility automation | No committed Next.js e2e/accessibility suite exists. Phase 6.1 manual UI audit is historical evidence only. |
+| Public deployment | Not approved. No host, DNS, TLS, image registry, or monitoring configuration was changed. Formal release verdict remains FAIL. |
+| Hosted escalation cron execution | Live hosted cron run and hosted `ESCALATION_CRON_SECRET` configuration were not performed or verified (§6.1). |
+| GHCR publication of current local changes | Blocked by missing `write:packages`; no registry was modified. Existing package existence/pull is verified read-only (§6.2). |
+| Secret rotation/revocation | Not performed; 4 current-local-env matches require owner action (§6.1). |
+| Browser E2E/accessibility on hosted deployment | Local working-tree Playwright + axe suite passed (§4.1); no hosted/production browser run was performed. |
 
 ## 8. Explicit pending implementation items
 
 These items are tracked in `docs/MASTER_REQUIREMENTS_CHECKLIST.md` Section L and are not claimed as
 complete:
 
-- Instructor-level automatic assignment (department auto-routing is implemented; direct instructor
-  selection remains manual).
-- Live status polling/SSE (on-demand tracking works; automatic refresh is not implemented).
-- Password-login/registration audit events (Google login is audited; email session events are not).
+- Instructor-level automatic assignment: implemented and verified under FR-04b/FR-13 (§2.5, §6.1).
+- FR-06: conditional ETag/304 polling plus `useTicketStatusPolling` and an E2E case are local-verified
+  (§4.1, §6.1). True SSE/WebSocket push is not implemented and is not claimed.
+- FR-07: cron trigger code/config is local-verified; live hosted cron execution is NOT VERIFIED
+  (§6.1).
+- FR-14: password register/login success and failure audit events are implemented and local-verified
+  (§6.1).
+- Still pending: live provider verification, operator-approved deployment, secret rotation/revocation,
+  approved Next.js/Zod/Vitest upgrades, `write:packages` for publishing current changes, and a real
+  labelled evaluation dataset. See `docs/FINAL_RELEASE_BLOCKERS.md` and
+  `docs/OPERATOR_ACTION_CHECKLIST.md` for exact operator steps.
 
 ## 9. Reproduction order
 
@@ -253,3 +375,20 @@ complete:
 3. From `frontend-next/`, run `npm ci`, then the commands in §4.
 4. From the repository root, run the Compose and build commands in §5.
 5. Use `docs/DEPLOYMENT_GUIDE.md` for provider setup, backup, restore, rollback, and health checks.
+
+## 6.4 Final Dependency Remediation & Re-verification (2026-11-24)
+
+All 6 previously open frontend dependency vulnerabilities (`next`/`postcss`, `zod`, `vitest`, `@vitest/mocker`, `tinypool`) were resolved cleanly (`vitest@4.1.12` + `vite@^7.3.8` + `@testing-library/dom@^10.4.2`, `zod@4.6.7`, `next@16.4.6`, `eslint-config-next@16.4.6`), with compatibility updates to `useTicketStatusPolling.ts`, `api/auth/{login,register}/route.ts`, `eslint.config.mjs`, `layout.tsx`, and `package.json` (`next build --webpack`).
+
+| Check | Exact Result (2026-11-24) | Notes |
+| --- | --- | --- |
+| `npm audit` & `npm audit --omit=dev` (`frontend-next/`) | **0 vulnerabilities** (`743` total / `211` prod) | Evidence: `docs/evidence/npm_audit_post_remediation.json`, `docs/evidence/npm_audit_post_remediation_prod.json`. |
+| `npm audit` (`frontend/`) | **0 vulnerabilities** | Legacy Vite SPA preserved cleanly. |
+| `npm run typecheck` / `npm run lint` / `npm run test` | **PASS** (0 TS/ESLint errors; **3 passed** Vitest 4.1.12) | Clean across all updated routes and ESLint 9 flat config. |
+| `npm run build` (`next build --webpack` v16.4.6) | **PASS** (35.5s compile, 12/12 workers) | Next 16 default Turbopack hit `TurbopackInternalError` spawning the PostCSS worker on Windows/OneDrive; `build` and `pretest:e2e` pin `--webpack`, which passes locally and inside Docker (`node:20-alpine`). |
+| `npm run test:e2e` (Playwright + Axe) | **12 passed (2.2m)** | Zero serious/critical axe violations; verified with host loopback access (`BypassSandbox: true`; Windows AppContainer sandbox blocked `127.0.0.1`). |
+| `backend\.venv\Scripts\python.exe -m pytest -q` | **229 passed, 17 warnings in 292.01s (0:04:52)** | Run with `DEBUG=false` and host loopback access (Windows sandbox blocked `ProactorEventLoop._make_self_pipe` `socketpair()` inside `TestClient`). |
+| `scripts/backup_restore_rehearsal.ps1` | **PASS** | Clean Alembic upgrade `44273a775ed8 -> feedf21773e1` + `pg_dump`/`pg_restore` hash match on disposable `postgres:16-alpine`. |
+| `docker build` (`backend` & `frontend-next`) | **PASS** | Built `smartquery-backend:submission-audit` and `smartquery-frontend:submission-audit` cleanly. |
+| Isolated Container Health & BFF Smoke | **PASS** | Production-mode scratch stack (`postgres:16-alpine` + `smartquery-backend` + `smartquery-frontend`): `postgres_ready=True`, `backend_health=healthy`, `frontend_health=healthy`, `/api/health` 200, `/login` 200, `/api/auth/session` 200, unauthenticated `/api/backend/auth/me` 401; scratch resources removed. |
+| Combined Supervisor Image (`Dockerfile`) & Docker Hub Publish | **PASS** | Built single unified image (`python:3.11-slim` + `node:20-slim` + Supervisor, zero `.env`/dev tools/playwright), verified `image_hygiene=PASS`, `combined_container_health=healthy`, `api_health=200`, `register=200` (`HttpOnly`/`Secure` cookie), `auth_me=200`; published & anonymously verified `raphicsdigitalsolutions/smart-query-system:latest` and `:v1.0.0` at `sha256:e9ed70810b3f9e5c6bb5ee1e7fb83847acb423c18a2bb506d9e83a5368450430`. |

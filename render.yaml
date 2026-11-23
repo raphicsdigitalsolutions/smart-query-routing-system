@@ -1,0 +1,26 @@
+# Minimal Render Blueprint for the existing Dockerized FastAPI backend.
+#
+# CONFIGURATION ARTIFACT ONLY - DO NOT APPLY while docs/RELEASE_READINESS.md
+# records production release as FAIL. See
+# docs/RENDER_FREE_PLAN_DEPLOYMENT_AUDIT.md for the blocking findings.
+#
+# No secrets, credentials, or .env values are stored in this file. Required
+# secrets must be injected in the Render Dashboard / secret manager.
+
+services:
+  - type: web
+    name: smart-query-api
+    runtime: docker
+    plan: free
+    branch: main
+    # rootDir intentionally omitted: Root Directory must stay blank (repo root).
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    healthCheckPath: /health
+    numInstances: 1
+    autoDeployTrigger: 'off'
+    envVars:
+      # The image binds uvicorn to 0.0.0.0:8000. Render defaults PORT to 10000;
+      # set it explicitly so Render forwards traffic to the container's port.
+      - key: PORT
+        value: '8000'

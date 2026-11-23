@@ -224,9 +224,9 @@ export function Topbar({ user, onMenuClick }: TopbarProps) {
             <button
               type="button"
               className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white py-1.5 pl-1.5 pr-2 text-left shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40"
-              aria-label="Account menu"
             >
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-50 text-xs font-semibold text-teal-700">
+              <span className="sr-only">Account menu</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-50 text-xs font-semibold text-teal-700" aria-hidden="true">
                 {initials(user.full_name)}
               </span>
               <span className="hidden sm:block">

@@ -2,7 +2,9 @@
 
 Provider-independent production packaging and operations guide for the Docker Compose stack.
 
-> **No public deployment was performed.** This work only created local packaging, environment examples, and documentation. No image was built or pushed, no host was contacted, no DNS/provider setting was changed, and no data was modified. The main agent/operator must perform the build and deployment after application source is final.
+> **Historical scope note:** This guide was originally authored as provider-independent packaging and operations documentation; no public deployment was performed at that time.
+>
+> **Deployment addendum (2026-11-22):** A real public deployment was subsequently executed: FastAPI on Vercel Hobby, Next.js BFF on Netlify Free, and Neon PostgreSQL. The live topology, exact URLs, deploy IDs, verification results, serverless deviations, and unresolved gates are recorded in `docs/HACKATHON_DEPLOYMENT_REPORT.md`. The guidance below remains the operational reference for reproduction, rollback, and provider setup.
 
 ## 1. What is deployed
 
@@ -305,7 +307,7 @@ docker compose -f docker-compose.yml cp postgres:/tmp/smartquery_backup.dump ./s
 docker compose -f docker-compose.yml exec postgres rm -f /tmp/smartquery_backup.dump
 ```
 
-Store the dump encrypted off-host and test restores regularly. A dump is a point-in-time copy; also retain volume-level snapshots where your platform supports them.
+Store the dump encrypted off-host and test restores regularly. A dump is a point-in-time copy; also retain volume-level snapshots where your platform supports them. A LOCAL VERIFIED rehearsal (`docs/evidence/backup_restore_rehearsal.json`, status `PASS`) used a disposable `postgres:16-alpine` container on `127.0.0.1:55432`; schema hash `ed7d1ab744886956c3e35ddde4674a05b01da26ef8313199b2c741e35917664b` and record hash `00e07e9f6182a27c59db5e2b9b0d51055011c13029485c4647b9ba4cc994d419` matched after clean restores, stale row count went 1 → 0, and the container was removed. This does not verify a hosted Neon restore and touched no production data.
 
 Ticket attachment bytes are stored separately in `smartquerysystem_smartquery_attachments_data`; the database dump contains only their metadata and checksums. Back up that volume with an encrypted, point-in-time volume snapshot under the same schedule, and restore it together with the matching database dump. A database-only restore leaves attachment rows without their files.
 
@@ -434,3 +436,53 @@ Exact commands and results:
 | Isolated backend/frontend/PostgreSQL container smoke | All health checks passed; migration head applied; DB revision survived a scratch PostgreSQL restart; scratch resources removed |
 
 Not performed against the existing production data volume: `docker compose up`, migrations against that live database, volume deletion, provider registration, or any public deployment. Exact smoke commands and results are in `docs/TEST_REPORT.md`.
+
+## 15. Post-deployment reconciliation (2026-11-23)
+
+The notes below use only local evidence. They do not change any live provider resource, hosted
+configuration, credential, registry content or production database row.
+
+### Delivered and LOCAL VERIFIED
+
+- **FR-04b / FR-13:** deterministic instructor auto-routing in `backend/app/services/instructor_routing.py`.
+  Only active `staff` users in the resolved department are eligible; active `InstructorLeave` windows
+  (exclusive end bound) exclude staff, HOD/admin users are never auto-assigned, and there is no
+  approval workflow. Selection is least non-terminal workload, then lowercase name, then ID. Tests:
+  `backend/tests/test_instructor_routing.py`. University approval of the leave workflow is still open.
+- **FR-06:** conditional polling, not SSE/push. `GET /api/v1/tickets/{ticket_id}/updates` returns an
+  ETag and HTTP 304 for unchanged snapshots; the frontend `useTicketStatusPolling` hook polls about
+  every 15 seconds. E2E polling spec: `frontend-next/e2e/tickets.spec.ts`.
+- **FR-07:** `POST /api/v1/tickets/escalation/sweep` requires `X-Cron-Secret` matching
+  `ESCALATION_CRON_SECRET` (constant-time; fails closed when unconfigured). `backend/vercel.json`
+  schedules the path hourly. Tests: `backend/tests/test_escalation_serverless.py`.
+- **FR-14:** password registration/login success and failure audit events are written without
+  passwords or secrets (`auth.registered`, `auth.login_succeeded`, `auth.login_failed`). Tests:
+  `backend/tests/test_auth_audit.py`.
+- **Token lifetime:** production default remains 60 minutes; only the test environment uses 1440
+  minutes (`backend/tests/test_token_expiry.py`).
+- **Playwright + axe E2E:** build passed (`13/13` pages) and **12 tests passed (1.5m)**; Vitest passed (`3 passed`); no serious/critical axe violations on login, student workspace or ticket detail. This is local evidence, not a hosted run.
+- **Backup/restore:** see §9 and `docs/evidence/backup_restore_rehearsal.json` (status `PASS`; run with `$env:DEBUG = 'false'` on hosts where `DEBUG` is set to a non-boolean environment string such as `release`).
+- **Malware scanning:** `docs/evidence/malware_scan_verification.json` is
+  `PASS_LOCAL_INTEGRATION_ONLY`. Real `clamav/clamav:stable` (digest
+  `sha256:64e30c0bf976198024deb3dc6d5cfe2485fb969c0f73549ba0fdb364b9469614`) returned `OK`/exit 0
+  for a clean file and `Eicar-Test-Signature FOUND`/exit 1 for an EICAR fixture, using in-container
+  base64 fixtures; focused tests: 10 passed. `MALWARE_SCAN_ENABLED=false` by default and no scanner
+  is configured in the hosted environment. A Windows mount fixture failed and is **not** claimed as
+  passing. NOT DEPLOYED.
+
+### Test evidence and open items
+
+- Backend full suite earlier historical runs: 218 passed, 225 passed. **Final full backend rerun: `229 passed, 17 warnings in 264.12s (0:04:24)`**; focused security/auth/malware/cron run: `64 passed, 17 warnings in 27.06s`; focused escalation/notification run: `42 passed, 17 warnings in 70.95s`; the 17 warnings are pre-existing LangSmith deprecations. Historical suite results remain recorded in `docs/TEST_REPORT.md`.
+- Secret audit (`docs/evidence/secret_audit.json`, `docs/SECRET_AUDIT_REMEDIATION_PLAN.md`): 307
+  tracked files, 16 workspace potential secrets, 12 git-history potential secrets, 453 docker-image
+  potential secrets and 4 matches against current local environment values. Findings are stored as
+  redacted field names/lengths/fingerprints, not values. No rotation or revocation was authorized or
+  performed by this work.
+- After installing Playwright/axe, `npm audit` reported 6 vulnerabilities; on **2026-11-24**, all 6 were remediated cleanly (`vitest@4.1.12`, `zod@4.6.7`, `next@16.4.6`, `eslint-config-next@16.4.6` with `next build --webpack`), bringing both `npm audit` and `npm audit --omit=dev` to **0 vulnerabilities** and rebuilding all Docker images cleanly. A unified single-container Supervisor image (`Dockerfile`, `docker/supervisord.conf`, `docker/backend-start.sh`) is also published publicly at `https://hub.docker.com/r/raphicsdigitalsolutions/smart-query-system` (`latest`, `v1.0.0`, digest `sha256:e9ed70810b3f9e5c6bb5ee1e7fb83847acb423c18a2bb506d9e83a5368450430`).
+- **LIVE/BLOCKED/NOT VERIFIED:** live hosted cron execution is NOT VERIFIED even though the repository
+  config exists. GHCR publication remains BLOCKED (missing `write:packages`); registry content,
+  including `ghcr.io/raphicsdigitalsolutions/smart-query-system:latest`, was left untouched.
+  Live Google OAuth, SMTP, WhatsApp and user BYOK checks remain BLOCKED without real credentials.
+- University approval is still required for scope deviations, tool/model/hosting substitutions, the
+  zero-cost interpretation, the leave workflow and release/public governance. The prior
+  `FAIL — DO NOT DEPLOY` verdict remains.

@@ -25,6 +25,8 @@ TICKET_ASSIGNED = "ticket.assigned"
 PUBLIC_REPLY = "public.reply"
 AUTO_REPLY = "assignment.auto_reply"
 TICKET_ESCALATED = "ticket.escalated_automatically"
+TICKET_MANUAL_ESCALATED = "ticket.escalated"
+TICKET_DEESCALATED = "ticket.deescalated"
 TICKET_RESOLVED = "ticket.resolved"
 TICKET_CLOSED = "ticket.closed"
 
@@ -34,7 +36,9 @@ _EVENT_LABELS = {
     TICKET_ASSIGNED: "Ticket assigned",
     PUBLIC_REPLY: "New public reply",
     AUTO_REPLY: "Automatic absence reply",
-    TICKET_ESCALATED: "Ticket escalated",
+    TICKET_ESCALATED: "Ticket escalated automatically",
+    TICKET_MANUAL_ESCALATED: "Ticket escalated",
+    TICKET_DEESCALATED: "Ticket de-escalated",
     TICKET_RESOLVED: "Ticket resolved",
     TICKET_CLOSED: "Ticket closed",
 }

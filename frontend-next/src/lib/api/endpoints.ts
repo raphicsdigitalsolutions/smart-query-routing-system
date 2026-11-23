@@ -45,6 +45,7 @@ import type {
   TicketHistoryResponse,
   TicketListResponse,
   TicketResponse,
+  TicketStatusSnapshot,
   TicketUpdate,
   UserResponse,
 } from './types';
@@ -150,6 +151,8 @@ export const ticketsApi = {
   list: (params: TicketQuery = {}, signal?: AbortSignal) =>
     apiFetch<TicketListResponse>(`/tickets${buildQuery(params)}`, { signal }),
   get: (ticketId: number | string, signal?: AbortSignal) => apiFetch<TicketResponse>(`/tickets/${ticketId}`, { signal }),
+  statusSnapshot: (ticketId: number | string, signal?: AbortSignal) =>
+    apiFetch<TicketStatusSnapshot>(`/tickets/${ticketId}/updates`, { signal }),
   history: (ticketId: number | string, signal?: AbortSignal) =>
     apiFetch<TicketHistoryResponse>(`/tickets/${ticketId}/history`, { signal }),
   update: (ticketId: number | string, payload: TicketUpdate) =>

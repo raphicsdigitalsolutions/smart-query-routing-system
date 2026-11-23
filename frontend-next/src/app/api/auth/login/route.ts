@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     const parsed = loginSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: 'Validation error', detail: parsed.error.flatten(), code: 'validation_error' },
+        { success: false, error: 'Validation error', detail: z.flattenError(parsed.error), code: 'validation_error' },
         { status: 422 },
       );
     }

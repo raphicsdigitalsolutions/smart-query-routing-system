@@ -2,7 +2,7 @@
 
 This guide explains how students, staff, heads of department (HODs), and administrators use the system. Availability of some features depends on your role and on external providers configured by your deployment team (SMTP email, Meta WhatsApp, Google OAuth2, and personal OpenAI keys). If a menu item or button is missing, it is not enabled for your role or build.
 
-> No public deployment was performed as part of the packaging work. Provider features require real accounts and exact configuration before they work.
+> A live hackathon deployment now exists at `https://smart-query-routing-system.netlify.app`, backed by the Vercel-hosted API and Neon database. Provider features still require real accounts and exact configuration before they work. See `docs/HACKATHON_DEPLOYMENT_REPORT.md`.
 
 ## 1. Roles at a glance
 
@@ -33,7 +33,7 @@ Your deployment must have registered the exact JavaScript origin and configured 
 ### Session and security notes
 
 - Your session is stored in an `HttpOnly`, `SameSite=Lax`, `Secure` (HTTPS) cookie. It is never available to JavaScript in the browser.
-- Sessions expire (60 minutes by default); sign in again when prompted.
+- Sessions expire after 60 minutes by default in production; sign in again when prompted. The automated test environment uses a longer lifetime (1440 minutes) only for test stability; that value is not a deployed setting.
 - Use **Sign out** on shared devices.
 - Never share your password or personal API key.
 
@@ -46,7 +46,7 @@ Your deployment must have registered the exact JavaScript origin and configured 
 
 ### Auto-routing and channels
 
-- The system determines the target department and priority from your selection and available routing information; AI recommendations may assist staff but are advisory.
+- The system determines the target department and priority from your selection and available routing information; AI recommendations may assist staff but are advisory. Instructor assignment is deterministic and staff-only: an active `staff` user in the department with the lowest open-ticket load is chosen (stable name/ID tie-breaks). HODs and admins are never auto-assigned, staff inside an active leave window are excluded, and there is no in-app approval step for auto-assignment. If nobody is eligible, the query stays `new` for manual assignment.
 - Submitted queries are recorded with their **channel**: web form, email, or WhatsApp. Email/webhook and WhatsApp submission work only if those integrations were configured by your deployment. Otherwise the web form is the supported channel.
 - If you submit by email or WhatsApp, use the university-approved address/number and include enough detail for routing. Delivery/intake confirmations depend on provider setup.
 
@@ -65,8 +65,12 @@ Statuses, in lifecycle order:
 | `resolved` | A resolution has been provided |
 | `closed` | Final state; no further changes |
 
-- Status and assignment changes are recorded in the ticket history with actor and time.
-- Queries not resolved within the configured SLA (24 hours by default) are flagged overdue/escalated automatically by the background sweep and notified where notifications are enabled.
+- Status and assignment changes are recorded in the ticket history with actor and time. Deterministic
+  auto-routing assigns an available instructor immediately; if nobody is eligible, the ticket stays in
+  `new` for an HOD or admin to assign manually.
+- Queries not resolved within the configured SLA (24 hours by default) are flagged overdue/escalated when the sweep runs. A secret-protected cron trigger is configured in the repository, but live hosted cron execution has not been verified. Notifications depend on deployment configuration.
+- The ticket detail view polls a small status snapshot about every 15 seconds using a conditional GET
+  (ETag/304). This is polling, not SSE or push messaging; a 304 response means nothing changed.
 - HODs and admins can override routing, priority, status, and assignment; overrides are audited.
 
 ## 5. Conversations, public replies, and internal notes
@@ -116,8 +120,9 @@ The admin area provides aggregate views of query volume, status/priority mix, de
 
 Staff members who are instructors can mark themselves as on leave / unavailable and, where enabled, set an auto-reply message.
 
-- Routing/assignment avoids unavailable staff where the system supports it.
-- Auto-replies apply to incoming queries assigned to that instructor.
+- Automatic routing excludes staff whose active leave window covers the current time (the end time is
+  exclusive). Manual assignment by an HOD or admin remains available and still publishes the instructor's auto-reply.
+- Auto-replies apply to incoming queries assigned to that instructor. There is no in-app approval workflow for routing or the auto-reply; the leave rules/workflow still require university approval as an unresolved scope deviation.
 - Always set a return date and update availability when you return. HODs/admins can review leave information for their area.
 
 ## 11. Notifications
@@ -127,7 +132,7 @@ When the deployment has configured notifications, you may receive in-app notific
 - Ticket submitted
 - Ticket assigned
 - Public reply posted
-- Escalation / SLA breach
+- Escalation / De-escalation / SLA breach (to authorized assigned staff, department HODs, and admins; SLA auto-sweep also notifies the student)
 - Ticket resolved
 
 Privacy rules:
@@ -138,9 +143,9 @@ Privacy rules:
 
 ## 12. Audit and history
 
-- Each ticket keeps status, assignment, and message history with timestamps and actors.
+- Each ticket keeps status, assignment, escalation/de-escalation, and message history with timestamps, previous/new states, and actors.
 - Admins can view system-wide audit entries where the audit UI is present in your build.
-- AI analysis, approval, routing overrides, and escalation are recorded without storing your personal API key.
+- AI analysis, approval, routing overrides, escalation/de-escalation, and password registration/login outcomes (success and failure) are recorded. Auth audit rows carry email/context, never a password or API key.
 - Audit records are intended for accountability; do not alter or delete them.
 
 ## 13. Privacy and data rules
@@ -155,3 +160,5 @@ Privacy rules:
 ## 14. Getting help
 
 Check the dashboard **Backend status** card first. If it shows offline, contact your administrator with the ticket reference and the time of the failure. administrators should follow `docs/DEPLOYMENT_GUIDE.md` for health checks, backups, and provider configuration.
+
+University approval is still outstanding for scope deviations, tool/model/hosting substitutions, the zero-cost interpretation, the leave workflow, and release/public governance; the prior `FAIL — DO NOT DEPLOY` verdict remains in force. The live hackathon deployment is a demonstration, not an approved production release. *(Updated 2026-11-24: local Next.js 16.4.6 / Zod 4.6.7 security upgrades verified end-to-end with 0 npm vulnerabilities, 229 backend tests, and 12 Playwright/Axe checks passing.)*

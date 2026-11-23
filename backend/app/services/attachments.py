@@ -20,6 +20,7 @@ from app.core.errors import AppError
 from app.models import MessageAttachment, User
 from app.schemas.ticket import AttachmentListResponse, AttachmentResponse
 from app.services.audit import record_audit
+from app.services.malware_scan import scan_attachment_bytes
 from app.services.tickets import create_message, get_accessible_ticket, list_messages
 
 _EXPECTED_MIME = {
@@ -94,6 +95,16 @@ def create_message_attachment(
     data = upload.file.read(int(settings.MAX_UPLOAD_BYTES) + 1)
     suffix = _validate(upload, data)
     original_name = (upload.filename or "attachment").strip()[:255]
+    try:
+        scan_attachment_bytes(data, original_name)
+    except AppError:
+        raise
+    except Exception as exc:
+        raise AppError(
+            "Malware scanner is unavailable",
+            503,
+            code="attachment_scan_unavailable",
+        ) from exc
     stored_name = _safe_file_name(original_name, suffix)
     relative_path = Path(str(ticket.id)) / stored_name
     destination = _storage_root() / relative_path

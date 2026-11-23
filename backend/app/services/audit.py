@@ -15,31 +15,37 @@ OVERRIDE_ACTIONS = {
     "ticket.status_changed",
     "ticket.updated",
     "ticket.escalated",
+    "ticket.deescalated",
 }
 
 
 def record_audit(
     db: Session,
     *,
-    actor: User,
+    actor: User | None,
     action: str,
     entity_type: str,
     entity_id: int | str,
     details: dict[str, Any] | None = None,
     is_override: bool | None = None,
+    actor_role: str | None = None,
 ) -> AuditLog:
     """Append an audit entry (caller controls the surrounding transaction)."""
+    resolved_role = actor_role or (actor.role if actor is not None else None)
     if is_override is None:
-        is_override = actor.role in {UserRole.HOD.value, UserRole.ADMIN.value} and action in OVERRIDE_ACTIONS
+        is_override = (
+            resolved_role in {UserRole.HOD.value, UserRole.ADMIN.value}
+            and action in OVERRIDE_ACTIONS
+        )
 
     entry = AuditLog(
-        actor_id=actor.id,
-        actor_role=actor.role,
+        actor_id=actor.id if actor is not None else None,
+        actor_role=resolved_role,
         action=action,
         entity_type=entity_type,
         entity_id=str(entity_id),
         details=details,
-        is_override=is_override,
+        is_override=bool(is_override),
     )
     db.add(entry)
     return entry

@@ -14,6 +14,7 @@ import { TicketHistory } from './TicketHistory';
 import { TicketWorkflowPanel } from './TicketWorkflowPanel';
 import { AiAssistPanel } from './AiAssistPanel';
 import { useSession } from '@/hooks/useSession';
+import { useTicketStatusPolling } from '@/hooks/useTicketStatusPolling';
 import { ticketsApi, usersApi } from '@/lib/api/endpoints';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { hasRole } from '@/lib/auth/rbac';
@@ -82,6 +83,25 @@ export function TicketDetail({ ticketId }: TicketDetailProps) {
       });
     return () => controller.abort();
   }, [load]);
+
+  useTicketStatusPolling(
+    ticketId,
+    (update) => {
+      setTicket((current) =>
+        current?.id === update.id
+          ? {
+              ...current,
+              status: update.status,
+              assigned_to: update.assigned_to,
+              is_escalated: update.is_escalated,
+              updated_at: update.updated_at,
+            }
+          : current,
+      );
+      void load().catch(() => undefined);
+    },
+    { enabled: !loading && !loadError && Boolean(ticket) },
+  );
 
   async function runAction(action: () => Promise<MutationResponse>, successMessage: string) {
     setBusy(true);
@@ -159,7 +179,12 @@ export function TicketDetail({ ticketId }: TicketDetailProps) {
       <Card className="overflow-hidden">
         <div className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="font-mono text-xs font-medium text-slate-500">{ticket.public_reference}</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="font-mono text-xs font-medium text-slate-500">{ticket.public_reference}</p>
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-teal-700" aria-label="Live status updates enabled">
+                <span className="h-1.5 w-1.5 rounded-full bg-teal-500" aria-hidden="true" /> Live updates
+              </span>
+            </div>
             {ticket.is_escalated ? <StatusPill status="urgent" label="Escalated" /> : null}
           </div>
           <h2 className="mt-2 text-xl font-semibold tracking-tight text-navy-900 sm:text-2xl">{ticket.subject}</h2>

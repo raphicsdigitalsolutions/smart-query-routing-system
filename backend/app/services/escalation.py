@@ -9,9 +9,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models import Ticket, TicketStatusHistory, User
+from app.models import Ticket, TicketStatusHistory
 from app.services.audit import record_audit
 from app.services.notifications import TICKET_ESCALATED, notify_ticket_event
+from app.services.tickets import escalation_recipients
 
 _TERMINAL_STATUSES = ("resolved", "closed")
 _SYSTEM_ACTOR = SimpleNamespace(id=None, role="system")
@@ -45,15 +46,18 @@ def run_escalation_sweep(
 
     escalated = 0
     for ticket in candidates:
+        previous_escalated = bool(ticket.is_escalated)
+        previous_escalated_at = ticket.escalated_at
         ticket.is_escalated = True
         ticket.escalated_at = reference
+        note = f"Automatically escalated after {window_hours}h SLA"
         db.add(
             TicketStatusHistory(
                 ticket_id=ticket.id,
                 from_status=ticket.status,
                 to_status=ticket.status,
                 changed_by_id=None,
-                note=f"Automatically escalated after {window_hours}h SLA",
+                note=note,
             )
         )
         record_audit(
@@ -65,32 +69,20 @@ def run_escalation_sweep(
             details={
                 "public_reference": ticket.public_reference,
                 "sla_hours": window_hours,
+                "previous_is_escalated": previous_escalated,
+                "new_is_escalated": True,
+                "previous_escalated_at": (
+                    previous_escalated_at.isoformat() if previous_escalated_at else None
+                ),
+                "new_escalated_at": reference.isoformat(),
+                "actor_name": "System (SLA)",
+                "mode": "automatic",
+                "note": note,
             },
             is_override=False,
         )
 
-        recipients: list[User] = []
-        student = db.get(User, ticket.student_id)
-        if student is not None:
-            recipients.append(student)
-        if ticket.assigned_to is not None:
-            assignee = db.get(User, ticket.assigned_to)
-            if assignee is not None:
-                recipients.append(assignee)
-        recipients.extend(
-            db.scalars(
-                select(User).where(
-                    User.is_active.is_(True),
-                    User.role == "hod",
-                    User.department_id == ticket.department_id,
-                )
-            ).all()
-        )
-        recipients.extend(
-            db.scalars(
-                select(User).where(User.is_active.is_(True), User.role == "admin")
-            ).all()
-        )
+        recipients = escalation_recipients(db, ticket, include_student=True)
 
         notify_ticket_event(
             db,

@@ -1,6 +1,8 @@
 """Ticket management endpoints with backend-enforced role permissions."""
 
-from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
 from app.api.deps import (
@@ -23,6 +25,7 @@ from app.schemas.ticket import (
     TicketHistoryResponse,
     TicketListResponse,
     TicketResponse,
+    TicketStatusSnapshot,
     TicketUpdate,
 )
 from app.services.attachments import create_message_attachment, list_ticket_attachments
@@ -32,6 +35,7 @@ from app.services.tickets import (
     create_ticket,
     get_ticket_detail,
     get_ticket_history,
+    get_ticket_status_snapshot,
     list_messages,
     list_tickets,
     update_ticket,
@@ -46,7 +50,7 @@ def submit_ticket(
     db: Session = Depends(get_db),
     student: User = Depends(require_student),
 ) -> TicketResponse:
-    """Students submit a new query; reference and workflow start are automatic."""
+    """Students submit a new query; routing may assign an available instructor."""
     return create_ticket(db, payload, student)
 
 
@@ -94,6 +98,25 @@ def get_history(
     user: User = Depends(get_current_user),
 ) -> TicketHistoryResponse:
     return get_ticket_history(db, ticket_id, user)
+
+
+@router.get(
+    "/{ticket_id}/updates",
+    response_model=TicketStatusSnapshot,
+    responses={304: {"description": "Snapshot has not changed"}},
+)
+def get_ticket_updates(
+    ticket_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> TicketStatusSnapshot | Response:
+    """Conditional polling view for live status without repeating the full ticket payload."""
+    snapshot, etag = get_ticket_status_snapshot(db, ticket_id, user)
+    headers = {"ETag": etag, "Cache-Control": "no-store"}
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=status.HTTP_304_NOT_MODIFIED, headers=headers)
+    return JSONResponse(content=jsonable_encoder(snapshot), headers=headers)
 
 
 @router.patch("/{ticket_id}", response_model=MutationResponse)

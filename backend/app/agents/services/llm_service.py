@@ -272,4 +272,8 @@ class LlmService:
 
 def get_llm_service(api_key: str | None = None) -> LlmService:
     """Build a service; a supplied personal key overrides server settings."""
+    from app.agents.services.demo_llm import is_demo_api_key, make_ticket_grounded_llm
+
+    if is_demo_api_key(api_key):
+        return make_ticket_grounded_llm(api_key=api_key)
     return LlmService(api_key=api_key)

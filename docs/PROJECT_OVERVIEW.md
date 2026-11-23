@@ -74,11 +74,46 @@ provisioning path.
 - Production Dockerfiles and Compose stack with non-root images, health checks, migrations,
   persistent PostgreSQL and attachments, backup/restore and rollback guidance.
 
+### Added in the 2026-11-23 reconciliation (local verification)
+
+- Deterministic, staff-only instructor routing (FR-04b/FR-13): active `InstructorLeave` windows are
+  excluded, HOD/admin accounts are never auto-assigned, and overrides remain audited
+  (`backend/tests/test_instructor_routing.py`). No in-app leave-approval workflow exists.
+- Conditional status polling (FR-06): `GET /api/v1/tickets/{id}/updates` returns an ETag/`304 Not
+  Modified` snapshot consumed by the `useTicketStatusPolling` hook. This is **polling, not
+  SSE/WebSocket push**.
+- Secret-protected escalation trigger (FR-07): `POST /api/v1/tickets/escalation/sweep` with
+  `X-Cron-Secret` and an hourly `backend/vercel.json` schedule
+  (`backend/tests/test_escalation_serverless.py`). **Live hosted cron execution is NOT VERIFIED.**
+- Password register/login success and failure audit events without passwords or secrets (FR-14,
+  `backend/tests/test_auth_audit.py`).
+- `backend/tests/test_token_expiry.py` asserts the production 60-minute default; the 1440-minute
+  lifetime is test-only.
+- Working-tree Playwright + axe E2E suite: `npm run test:e2e` → `11 passed (1.3m)` with `pretest`
+  `next build` passing and no serious/critical axe violations on login, student workspace or ticket
+  detail. Vitest polling-hook tests exist; typecheck/lint/build passed.
+- Final full backend suite: `225 passed, 17 warnings in 265.61s (0:04:25)`; focused
+  malware/attachment tests: `10 passed, 17 warnings in 7.63s`.
+- Backup/restore rehearsal PASS (`docs/evidence/backup_restore_rehearsal.json`) on a disposable
+  `postgres:16-alpine` instance at `127.0.0.1:55432`, with matching schema/record hashes and stale
+  rows 1 → 0; the container was removed and production was untouched.
+- Optional malware scanning with a real ClamAV image verified `PASS_LOCAL_INTEGRATION_ONLY`
+  (`docs/evidence/malware_scan_verification.json`); clean `OK`/exit 0 and in-container base64 EICAR
+  `FOUND`/exit 1. A Windows-mounted EICAR fixture failed and is not claimed as a pass. Scanning is
+  disabled by default (`MALWARE_SCAN_ENABLED=false`) and not deployed.
+
 ### Explicitly pending or blocked
 
-- Instructor-level automatic assignment and automatic status polling/SSE.
-- Password-login/registration audit events.
-- Live provider verification and public deployment approval.
+- True SSE/WebSocket push is not implemented; FR-06 is conditional polling only.
+- Live hosted escalation cron execution and hosted `ESCALATION_CRON_SECRET` are **NOT VERIFIED**
+  (local code/config verification only).
+- Live provider verification and public deployment approval remain outstanding; the formal verdict
+  stays **FAIL — DO NOT DEPLOY** in `docs/RELEASE_READINESS.md`.
+- Secret audit (`docs/evidence/secret_audit.json`) recorded 16 workspace, 12 git-history and 453
+  docker-image potential secrets plus 4 current-local-env matches; no rotation or revocation was
+  performed.
+- `npm audit` reports 6 vulnerabilities (2 moderate, 2 high, 2 critical); approved Next.js/Zod and
+  test-toolchain upgrades are pending. GHCR publication is blocked by missing `write:packages`.
 - Original zero-cost Gemini/Claude/n8n/Baileys/Sheets toolchain conflicts with the approved OpenAI
   BYOK architecture and are not claimed.
 

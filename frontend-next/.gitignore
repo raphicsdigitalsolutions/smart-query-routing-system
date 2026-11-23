@@ -27,3 +27,8 @@ next-env.d.ts
 # OS/editor
 .DS_Store
 Thumbs.db
+
+# Playwright E2E artifacts and disposable database
+/.e2e/
+/playwright-report/
+/test-results/

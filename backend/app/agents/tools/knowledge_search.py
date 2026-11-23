@@ -188,9 +188,19 @@ class DatabaseKnowledgeRepository:
         limit: int = 3,
     ) -> list[dict]:
         """Rank only approved/active rows with the existing deterministic scorer."""
-        return InMemoryKnowledgeRepository(self._load_documents()).search(
+        results = InMemoryKnowledgeRepository(self._load_documents()).search(
             query, entities=entities, limit=limit
         )
+        if len(results) > 1 and limit <= 3:
+            top_score = float(results[0].get("relevance_score") or 0.0)
+            if top_score > 0:
+                threshold = round(top_score * 0.45, 4)
+                results = [
+                    item
+                    for item in results
+                    if float(item.get("relevance_score") or 0.0) >= threshold
+                ]
+        return results
 
     def query(
         self,

@@ -1,0 +1,125 @@
+{
+  "captured_at_utc": "2026-11-23T10:30:51.7727819Z",
+  "command": "npm audit --json",
+  "working_directory": "frontend-next",
+  "exit_code": 1,
+  "summary": {
+    "vulnerable_packages": 6,
+    "moderate": 2,
+    "high": 2,
+    "critical": 2,
+    "unique_ghsa_advisories": 10
+  },
+  "evidence_files": [
+    "docs/evidence/npm_audit_full_2026-11-23.json",
+    "docs/evidence/npm_audit_prod_2026-11-23.json",
+    "docs/evidence/npm_dependency_paths_2026-11-23.txt"
+  ],
+  "production_only_result": {
+    "command": "npm audit --omit=dev --json",
+    "vulnerable_packages": 3,
+    "moderate": 1,
+    "high": 2,
+    "critical": 0,
+    "packages": ["next", "postcss", "zod"],
+    "note": "The critical Vitest/tinypool/@vitest/mocker findings are development-test-toolchain findings. The frontend Docker runner installs with `npm ci --omit=dev`, so they are not in the runtime image; the deps and builder stages do install dev tools."
+  },
+  "packages": [
+    {
+      "name": "next",
+      "severity": "moderate",
+      "is_direct": true,
+      "installed_version": "15.5.29",
+      "dependency_chain": "frontend-next package.json -> next@15.5.29 -> nested node_modules/next/node_modules/postcss@8.4.31",
+      "advisories": [],
+      "via": ["postcss"],
+      "range": "9.3.4-canary.0 - 16.3.0-preview.10",
+      "fix_available": "next@16.4.6 (semver-major; pins postcss@8.5.23)",
+      "smallest_safe_remediation": "After approval, run the official Next.js 15->16 upgrade/codemod and `npm install next@16.4.6`; rebuild, typecheck, lint, and rerun Playwright/axe. Do not hand-edit the nested postcss version.",
+      "risk": "Major framework upgrade; requires Node >=20.9.0 and review of Next.js 16 breaking changes. No upgrade was applied."
+    },
+    {
+      "name": "postcss",
+      "severity": "high",
+      "is_direct": false,
+      "installed_version": "8.4.31",
+      "dependency_chain": "next@15.5.29 -> node_modules/next/node_modules/postcss@8.4.31 (nested; root postcss@8.5.33 from Tailwind/Vite is a separate, non-vulnerable instance)",
+      "advisories": ["GHSA-qx2v-qp2m-jg93", "GHSA-6g55-p6wh-862q", "GHSA-fxqj-rqcc-2cmp", "GHSA-r28c-9q8g-f849"],
+      "advisory_titles": [
+        "PostCSS has XSS via Unescaped </style> in its CSS Stringify Output",
+        "PostCSS: Arbitrary file read and information disclosure via attacker-controlled sourceMappingURL in CSS comments",
+        "PostCSS: incomplete fix of GHSA-6g55-p6wh-862q - attacker-controlled sourceMappingURL reads arbitrary .map files when `from` is unset",
+        "PostCSS: Path Traversal in Previous Source Map Auto-Loading (sourceMappingURL) leads to Arbitrary .map File Disclosure"
+      ],
+      "range": "<=8.5.22",
+      "fix_available": "next@16.4.6 (semver-major; brings postcss@8.5.23)",
+      "smallest_safe_remediation": "Same as `next`: upgrade Next.js to 16.4.6 with the codemod. A direct override of nested postcss is not the recommended release fix.",
+      "risk": "Build-time CSS processing; exposure depends on attacker-controlled CSS/source maps. No change was applied."
+    },
+    {
+      "name": "zod",
+      "severity": "high",
+      "is_direct": true,
+      "installed_version": "3.25.76",
+      "dependency_chain": "frontend-next package.json -> zod@3.25.76 (used by auth/register/login/Google BFF route schemas)",
+      "advisories": ["GHSA-mrhx-c7xc-m3w5"],
+      "advisory_titles": ["Zod can exhaust memory while validating oversized constrained collections"],
+      "range": "<4.6.6",
+      "fix_available": "zod@4.6.7 (semver-major)",
+      "smallest_safe_remediation": "After approval, `npm install zod@4.6.7`, then run typecheck, lint, build, Vitest and Playwright/axe; review the Zod 4 migration notes for schema/error-API changes.",
+      "risk": "Major validation-library upgrade affecting request schemas; no patched v3 line was reported. No change was applied."
+    },
+    {
+      "name": "vitest",
+      "severity": "critical",
+      "is_direct": true,
+      "is_dev_only": true,
+      "installed_version": "3.2.4",
+      "dependency_chain": "frontend-next package.json (dev) -> vitest@3.2.4; transitive @vitest/mocker@3.2.4 and tinypool@1.1.1",
+      "advisories": ["GHSA-5xrq-8626-4rwp", "GHSA-82fw-gwwq-j7x9"],
+      "advisory_titles": [
+        "When Vitest UI server is listening, arbitrary file can be read and executed",
+        "Vitest: Path Traversal / Arbitrary File Read via @vitest/mocker Redirect Mock (shared with @vitest/mocker)"
+      ],
+      "range": "<=4.1.10",
+      "fix_available": "vitest@4.1.12 (npm reports fixAvailable: true)",
+      "smallest_safe_remediation": "After approval, `npm install --save-dev vitest@4.1.12`; verify lockfile resolves @vitest/mocker@4.1.12 and removes/replaces vulnerable tinypool; rerun Vitest, typecheck, build and Playwright/axe.",
+      "risk": "Dev-toolchain major upgrade; Node ^20 || ^22 || >=24 required (local Node v22.23.2 satisfies this). Critical UI-server issue is not exposed in the current local test invocation, but the toolchain finding remains open. No change was applied."
+    },
+    {
+      "name": "@vitest/mocker",
+      "severity": "moderate",
+      "is_direct": false,
+      "is_dev_only": true,
+      "installed_version": "3.2.4",
+      "dependency_chain": "vitest@3.2.4 -> node_modules/vitest/node_modules/@vitest/mocker@3.2.4",
+      "advisories": ["GHSA-82fw-gwwq-j7x9", "GHSA-qxg6-89mg-rqv8"],
+      "advisory_titles": [
+        "Vitest: Path Traversal / Arbitrary File Read via @vitest/mocker Redirect Mock",
+        "Vitest: Code injection via unauthenticated manual mock registration"
+      ],
+      "range": "<=4.1.11",
+      "fix_available": "vitest@4.1.12 pins @vitest/mocker@4.1.12",
+      "smallest_safe_remediation": "Covered by the approved `vitest@4.1.12` dev-toolchain upgrade; do not add a direct dependency.",
+      "risk": "Test-only; no change was applied."
+    },
+    {
+      "name": "tinypool",
+      "severity": "critical",
+      "is_direct": false,
+      "is_dev_only": true,
+      "installed_version": "1.1.1",
+      "dependency_chain": "vitest@3.2.4 -> node_modules/tinypool@1.1.1",
+      "advisories": ["GHSA-5gmw-xhrv-c9v3", "GHSA-85c8-ppgw-ccpr"],
+      "advisory_titles": [
+        "Tinypool: Prototype Pollution gadget in worker options leads to Remote Code Execution",
+        "Tinypool: Prototype Pollution Gadget to RCE in run() options"
+      ],
+      "range": "<=2.1.1",
+      "fix_available": "npm reports fixAvailable: true (safe target is supplied through the vitest@4.1.12 toolchain upgrade)",
+      "smallest_safe_remediation": "Covered by the approved `vitest@4.1.12` upgrade; verify with `npm ls tinypool`. Do not add an ad-hoc direct pin.",
+      "risk": "Test-only in this workspace; not present in the production-only Docker runner. No change was applied."
+    }
+  ],
+  "disposition": "Not auto-fixed. Remaining fixes require semver-major Next.js and Zod upgrades plus a Vitest 4 toolchain migration; formal approval is required in this release-controlled workspace. Re-run both audit commands and attach fresh JSON after any approved change."
+}

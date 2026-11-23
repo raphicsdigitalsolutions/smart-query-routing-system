@@ -108,6 +108,15 @@ export interface TicketResponse {
   auto_routed?: boolean;
 }
 
+export interface TicketStatusSnapshot {
+  id: number;
+  public_reference: string;
+  status: TicketStatus;
+  assigned_to: number | null;
+  is_escalated: boolean;
+  updated_at: string;
+}
+
 export interface TicketListResponse {
   success: boolean;
   items: TicketResponse[];
@@ -263,6 +272,7 @@ export interface StatusHistoryItem {
   from_status: TicketStatus | null;
   to_status: TicketStatus;
   changed_by_id: number | null;
+  changed_by_name?: string | null;
   note: string | null;
   created_at: string;
 }
@@ -272,6 +282,22 @@ export interface AssignmentHistoryItem {
   from_assignee_id: number | null;
   to_assignee_id: number | null;
   changed_by_id: number | null;
+  from_assignee_name?: string | null;
+  to_assignee_name?: string | null;
+  changed_by_name?: string | null;
+  created_at: string;
+}
+
+export interface EscalationHistoryItem {
+  id: number;
+  action: 'escalated' | 'escalated_automatically' | 'deescalated' | string;
+  from_escalated: boolean;
+  to_escalated: boolean;
+  actor_id: number | null;
+  actor_name: string | null;
+  actor_role: string | null;
+  mode: string;
+  note: string | null;
   created_at: string;
 }
 
@@ -279,6 +305,7 @@ export interface TicketHistoryResponse {
   success: boolean;
   status_changes: StatusHistoryItem[];
   assignments: AssignmentHistoryItem[];
+  escalations?: EscalationHistoryItem[];
 }
 
 export interface MutationResponse {

@@ -1,5 +1,9 @@
 # Architecture
 
+> **Deployment addendum (2026-11-22):** A live hackathon deployment now exists: Next.js BFF on Netlify, FastAPI on Vercel Hobby, and Neon PostgreSQL. The diagrams below remain the application architecture reference; the live topology, serverless deviations, and verified endpoints are in `docs/HACKATHON_DEPLOYMENT_REPORT.md`.
+>
+> **Reconciliation addendum (2026-11-23):** Instructor routing is implemented in `app/services/instructor_routing.py` and is deterministic and staff-only (active `InstructorLeave` windows excluded, HOD/admin never auto-assigned, no in-app approval workflow). FR-06 is conditional polling (`GET /tickets/{ticket_id}/updates` with ETag/304 plus the frontend `useTicketStatusPolling` hook), not SSE/push. FR-07 adds a secret-protected `POST /tickets/escalation/sweep` and an hourly entry in `backend/vercel.json`; live hosted cron execution is **NOT VERIFIED**. Password registration/login success and failure audit events exist without passwords/secrets. Optional malware scanning is local-integrated only and disabled by default. University approval for scope deviations, tool/model/hosting substitutions, the zero-cost interpretation, the leave workflow and public-release governance is still outstanding; the prior `FAIL — DO NOT DEPLOY` verdict remains.
+
 ## High-level view
 
 ```text
@@ -20,6 +24,7 @@ Browser
 FastAPI application (port 8000)
         ├── app/main.py          app wiring, CORS, middleware, error handlers,
         │                        lifespan + production-only SLA sweep worker
+        │                        (disabled in the serverless deployment; cron trigger below)
         ├── app/api              versioned routers (/api/v1), auth dependencies
         │                        Phase 7: settings, knowledge, notifications,
         │                        analytics, announcements, leave, audit,
@@ -36,8 +41,8 @@ FastAPI application (port 8000)
         ├── app/services         ticket workflow, RBAC/ownership, audit and the
         │                        Phase 7 capability services (BYOK, knowledge,
         │                        notifications, email, WhatsApp, auto-routing,
-        │                        escalation, analytics, announcements, leave,
-        │                        reports, Google OAuth)
+        │                        instructor routing, malware scanning, escalation,
+        │                        analytics, announcements, leave, reports, Google OAuth)
         └── app/cli              dev-only admin provisioning and operator-run
                                  OpenAI connectivity probe
                  |
@@ -99,7 +104,7 @@ src/app/
 ```
 
 - `src/components/providers/AppProviders.tsx` composes the MUI theme provider, session provider and
-  Sonner toaster. `layout.tsx` uses `@mui/material-nextjs/v15-appRouter` for SSR-safe Emotion styles.
+  Sonner toaster. `layout.tsx` uses `@mui/material-nextjs/v16-appRouter` for SSR-safe Emotion styles (upgraded alongside Next.js `16.4.6` + Zod `4.6.7` + Vitest `4.1.12` on 2026-11-24).
 - `src/components/layout/AppShell.tsx`, `Sidebar.tsx` and `Topbar.tsx` provide a responsive shell;
   navigation items and role badges come from the live client session.
 - `src/components/auth/RoleGuard.tsx` hides unauthorized role views; `GoogleSignInButton.tsx` renders
@@ -114,7 +119,9 @@ src/app/
 - `src/components/ui/` holds shadcn-style wrappers over Radix (`button`, `card`, `input`, `textarea`,
   `label`, `select`, `dialog`, `dropdown-menu`, `popover`).
 - `src/hooks/useSession.ts`, `useTickets.ts` and `useBackendStatus.ts` centralize client data state;
-  all ticket fetches accept `AbortSignal` for cancellation.
+  all ticket fetches accept `AbortSignal` for cancellation. `useTicketStatusPolling.ts` polls the
+  lightweight ETag/304 status-snapshot endpoint (about every 15 s) and notifies the UI only on real
+  changes; it is polling, not SSE/push. E2E coverage is in `frontend-next/e2e/` (Playwright + axe).
 - `src/lib/api/types.ts` is the TypeScript mirror of the FastAPI response contracts and role/status
   maps. `client.ts`, `endpoints.ts` and `errors.ts` are the only browser-side API layer; Phase 7
   adds `apiKeysApi`, `knowledgeApi`, `notificationsApi`, `analyticsApi`, `announcementsApi`,
@@ -277,13 +284,25 @@ plus Phase 7 controls `AI_RATE_LIMIT_PER_MINUTE`, `BYOK_ENCRYPTION_KEY` and
   It is deterministic and LLM-free. No confident match (>= 2 score) raises `routing_unresolved`;
   ties break on the lowest department id. `TicketCreate.auto_route` or a missing `department_id`
   triggers routing, and the result is recorded in `audit_logs` as `ticket.auto_routed`.
+- `app/services/instructor_routing.py` then selects an ordinary active `staff` instructor in the
+  resolved department. Staff in an active `InstructorLeave` window are excluded (the end bound is
+  exclusive), as are inactive users. Remaining candidates are ranked by their count of assigned
+  tickets in non-terminal statuses, then lowercase `full_name`, then user ID. HOD and admin users
+  are deliberately not auto-assigned. A successful selection writes assignment/status history, a
+  `ticket.instructor_auto_assigned` audit row and one `TICKET_ASSIGNED` notification; no eligible
+  instructor produces `ticket.instructor_routing_skipped` while the ticket remains department-routed,
+  unassigned and in `new`. There is no approval workflow around this deterministic selection. Manual assignment via `POST /tickets/{id}/assign` is unchanged; the same active-window rule is shared with `active_auto_reply()` so on-leave staff are never auto-assigned. Verified locally by `backend/tests/test_instructor_routing.py` (exclusive end boundary, workload ranking, tie-breaks, audit/notification counts and no-eligible fallback).
 - `app/services/escalation.py` marks every non-terminal ticket older than `SLA_HOURS` (default 24)
   as `is_escalated`, stamps `escalated_at`, writes a status-history row and an
   `ticket.escalated_automatically` audit row, and notifies the student, assignee, department HODs
   and admins. The `is_escalated=False` predicate makes the sweep repeat-safe.
 - The sweep runs from a production-only async task in `app/main.py` every
-  `ESCALATION_SWEEP_MINUTES` (default 60), and can be triggered on demand by an admin via
-  `POST /api/v1/tickets/escalation/run`.
+  `ESCALATION_SWEEP_MINUTES` (default 60), can be triggered on demand by an admin via
+  `POST /api/v1/tickets/escalation/run`, and has a secret-protected serverless trigger
+  `POST /api/v1/tickets/escalation/sweep` (`X-Cron-Secret`, compared in constant time).
+  `backend/vercel.json` schedules that path hourly (`0 * * * *`). LOCAL VERIFIED:
+  `tests/test_escalation_serverless.py` and `tests/test_escalation.py`. The in-process worker is
+  disabled on Vercel, and **live hosted cron execution is NOT VERIFIED**.
 
 ### Analytics, announcements, leave and auto-reply
 
@@ -296,15 +315,31 @@ plus Phase 7 controls `AI_RATE_LIMIT_PER_MINUTE`, `BYOK_ENCRYPTION_KEY` and
   stored in `announcements`. Listing filters to active rows targeted at the caller's role and
   department; updates and deletion are soft/audited.
 - `app/services/leave.py` manages `instructor_leaves` windows (staff own, HOD department, admin all)
-  with an `auto_reply` text. `active_auto_reply()` is the exclusive lookup used by ticket assignment:
-  when an assignee is on leave, a public auto-reply message is created and the student is notified.
-  Delete is a soft deactivation so the audit trail remains.
+  with an `auto_reply` text. `active_auto_reply()` is the exclusive lookup used by manual ticket
+  assignment: when an assignee is on leave, a public auto-reply message is created and the student is
+  notified. The same active-window semantics exclude on-leave staff from automatic instructor
+  routing, so auto-assignment does not trigger an absence reply. Delete is a soft deactivation so
+  the audit trail remains.
+
+### Optional attachment malware scanning (local integration only)
+
+- `app/services/malware_scan.py` is a fail-closed hook in the attachment upload path. It is disabled
+  by default (`MALWARE_SCAN_ENABLED=false`) and does nothing without a configured
+  `MALWARE_SCAN_COMMAND`. When enabled, exit 1 means `422 attachment_malware_detected` and any
+  scanner error/missing binary/timeout means `503 attachment_scan_unavailable`; in both cases no
+  message row or file bytes are retained. Scanner output containing file contents is not logged.
+- LOCAL VERIFIED with the pinned `clamav/clamav:stable` image (clean file exit 0 / `OK`, EICAR
+  fixture exit 1 / `FOUND`) and 10 focused tests; see `docs/evidence/malware_scan_verification.json`.
+  A Windows mount fixture failed and is **not** claimed as passing. NOT DEPLOYED: no scanner service,
+  command or hosted environment setting was changed.
 
 ### Audit and read APIs; PDF/Excel reports
 
 - `audit_logs` is the shared append-only trail; `record_audit()` is used by ticket, knowledge, leave,
-  announcement, AI and integration flows. `GET /audit` (admin only, `app/services/audit.py`) is a
-  filtered/paginated reader over real rows — there are no synthetic authentication audits.
+  announcement, AI, integration and password-auth flows. `GET /audit` (admin only,
+  `app/services/audit.py`) is a filtered/paginated reader over real rows. `auth.registered`,
+  `auth.login_succeeded` and `auth.login_failed` are recorded with email/reason context only — no
+  password, token or API key. There are no synthetic audit rows.
 - `app/services/reports.py` builds deterministic PDF (ReportLab, `invariant=1`) and XLSX (openpyxl)
   exports from role-scoped ticket rows with the same filter surface as the ticket list. Binary
   responses are streamed by `GET /api/v1/reports/tickets.pdf` and `/tickets.xlsx` (staff+) and pass
@@ -339,7 +374,14 @@ POST /api/v1/tickets (student) or POST /api/v1/integrations/{email,whatsapp}/inb
                  -> match: department + matched keywords
        -> insert tickets row (channel, auto_routed, unique public_reference with retry)
        -> TicketStatusHistory(new) + audit ticket.created (+ ticket.auto_routed)
-       -> select active staff/HOD/admin in the department (plus admins)
+       -> services/instructor_routing.resolve_instructor(...)  [deterministic, no LLM]
+            -> eligible active staff in department, excluding active leave windows
+            -> lowest non-terminal workload, then lowercase full_name, then id
+            -> found: assignment + status history, ticket.instructor_auto_assigned,
+                     TICKET_ASSIGNED notification to that instructor only
+            -> none: ticket stays new/unassigned, ticket.instructor_routing_skipped audit
+       -> select active staff/HOD/admin in the department (plus admins),
+          excluding an auto-assigned instructor
        -> services/notifications.notify_ticket_event(TICKET_CREATED)
             -> in_app rows for every recipient
             -> email rows when SMTP configured
@@ -409,6 +451,17 @@ Trusted mail/webhook adapter -> POST /api/v1/integrations/email/inbound
   -> services/tickets.create_ticket(channel='email'|'whatsapp', auto_route from payload)
   -> same auto-route + audit + notification chain as flow 1
 ```
+
+### 6. Conditional status polling (FR-06)
+
+The Next.js ticket detail page calls `useTicketStatusPolling()` about every 15 seconds with an
+`AbortController` and an in-flight guard. The request flows through the same-origin BFF to
+`GET /api/v1/tickets/{ticket_id}/updates`, which returns a small status snapshot with an ETag derived
+from student-visible status fields. A matching `If-None-Match` yields HTTP 304 with no body and no
+re-render; a change yields HTTP 200 with a new ETag and the UI updates via callback. This is
+conditional polling only — no `EventSource`, WebSocket or push transport. Transient errors are
+ignored and retried on the next interval. E2E coverage is `frontend-next/e2e/tickets.spec.ts`; live
+hosted polling is not asserted.
 
 ## Data model
 
@@ -520,7 +573,10 @@ local Vite development origins.
 | Secrets at rest | Fernet (`BYOK_ENCRYPTION_KEY`) encrypts each user's personal key in `user_api_keys`; only a masked hint is returned. No browser/local storage of secrets. |
 | Provider fallback | Production forbids `ALLOW_GLOBAL_OPENAI_FALLBACK` and requires `BYOK_ENCRYPTION_KEY`/`JWT_SECRET_KEY` at settings validation; the agent service repeats the non-production check before using the global key. |
 | Intake adapters | `X-Intake-Token` compared with `hmac.compare_digest`; unconfigured token is fail-closed; student identity from mapped email, not untrusted headers. |
-| Abuse controls | Per-user AI rate limit from `agent_runs`; bounded LLM attempts/deadline/token caps; 10-minute notification dedupe; SMTP retry cap; upload size/type limits. |
+| Abuse controls | Per-user AI rate limit from `agent_runs`; bounded LLM attempts/deadline/token caps; 10-minute notification dedupe; SMTP retry cap; upload size/type limits; optional fail-closed malware scanning (disabled by default, local integration only). |
+| Cron trigger | `POST /tickets/escalation/sweep` requires `X-Cron-Secret` matching `ESCALATION_CRON_SECRET` by constant-time comparison; unconfigured secret rejects all calls. Live hosted cron execution not verified. |
+| Auth audit | Registration and password login outcomes are append-only audit rows with email/reason context only; no password, token or provider secret is stored. |
+| Secret audit | `docs/evidence/secret_audit.json` and `docs/SECRET_AUDIT_REMEDIATION_PLAN.md` record redacted triage only (307 tracked, 16 workspace potential, 12 git-history potential, 453 docker-image potential, 4 current-local-env matches). No rotation or revocation was authorized or performed. |
 | Supply chain/runtime | Both images run as non-root UID/GID 10001, contain no `.env`/secrets, use versioned base images (`python:3.11-slim`, `node:20-alpine`), and expose only health-checked services. |
 
 ## Backend architecture
@@ -585,8 +641,10 @@ is `docker-compose.yml` below.
   on `/api/health`. Server-side `API_BASE_URL` defaults to `http://backend:8000/api/v1`;
   `NEXT_PUBLIC_*` values are compile-time build args, never secrets.
 - Health checks gate startup ordering (`service_healthy`) for backend and frontend.
-- **No public deployment was performed.** This architecture describes local packaging and intended
-  topology only; no image build/push, host contact, DNS change or provider registration is asserted.
+- This section describes the original local Compose packaging and intended topology; that packaging
+  work performed no public deployment, image push, host contact, DNS change or provider registration.
+  A later live hackathon deployment (Netlify/Vercel/Neon) is recorded in
+  `docs/HACKATHON_DEPLOYMENT_REPORT.md`; it did not use this Compose topology.
 
 ## Explicit deviations and limits
 
@@ -600,14 +658,21 @@ is `docker-compose.yml` below.
 - **Automation/logging:** the original n8n + Gmail API + Google Sheets workflow is replaced by local
   FastAPI services — stdlib SMTP for email, SQL-backed `notifications`/`audit_logs`, and the
   production-only async escalation worker. No Sheets or n8n integration exists.
-- **Deployment:** no public deployment; only local Docker packaging and documentation. Live provider
+- **Deployment:** the original phase delivered only local Docker packaging and documentation; a later
+  live hackathon deployment exists but is a demonstration, not an approved release. Live provider
   accounts, TLS termination, monitoring, backup and rollback remain operator responsibilities.
+- **Governance:** university approval is still required for scope deviations, tool/model/hosting
+  substitutions, the zero-cost interpretation, the leave workflow and release/public governance.
+  The prior `FAIL — DO NOT DEPLOY` verdict remains; local verification does not clear it.
+- **Registry:** GHCR publication remains BLOCKED by missing `write:packages`. All registry content,
+  including `ghcr.io/raphicsdigitalsolutions/smart-query-system:latest`, was left untouched.
 - **Known telemetry limit:** `agent_runs.permission_outcome` is currently always `allowed`; denial
   paths are rejected before a run row is written. Knowledge file bytes are not retained (extracted
   text and checksum only). Ticket attachment bytes, by contrast, are retained in
   `ATTACHMENT_STORAGE_DIR` with only metadata and a SHA-256 checksum in the database.
-- **Testing evidence:** this document intentionally does not record test/build pass counts or claim
-  live provider verification. Run the suites and connectivity checks locally before release.
+- **Testing evidence:** exact counts belong in `docs/TEST_REPORT.md` and the hackathon report. This
+  document distinguishes LOCAL VERIFIED from LIVE/BLOCKED/NOT VERIFIED and claims no live provider
+  verification. Run the suites and connectivity checks locally before release.
 
 ## Testing and validation strategy
 
@@ -615,12 +680,24 @@ is `docker-compose.yml` below.
   providers (`conftest.py`, `ai_helpers.py`). Phase 7 coverage modules are `test_byok.py`,
   `test_knowledge.py`, `test_notifications.py`, `test_escalation.py`, `test_analytics.py`,
   `test_announcements.py`, `test_leave.py`, `test_audit.py`, `test_reports.py`, `test_integrations.py`,
-  `test_attachments.py` and `test_oauth.py`, alongside the Phase 4–6 modules.
+  `test_attachments.py` and `test_oauth.py`, plus `test_instructor_routing.py`, `test_escalation_serverless.py`, `test_auth_audit.py`, `test_token_expiry.py`, `test_malware_scan_service.py` and `test_attachment_malware.py`, alongside the Phase 4–6 modules.
 - `app/cli/test_openai.py` is an operator-run connectivity probe that makes a real minimal request;
   it is not part of the automated suite. This document does not claim that probe (or any provider
   call) succeeded.
-- Frontend scripts (`npm run typecheck`, `npm run lint`, `npm run build`) and the Vite build are the
-  intended static checks; results are intentionally not recorded here.
-- Browser-level verification of protected routes, role navigation, submission, internal-note privacy
-  and workflow controls is a manual release checklist, not an asserted result of this architecture
-  work.
+- Frontend scripts (`npm run typecheck`, `npm run lint`, `npm run build`) are the intended static
+  checks; recorded results are in `docs/TEST_REPORT.md` and `docs/HACKATHON_DEPLOYMENT_REPORT.md`.
+- Browser-level verification is now automated: Playwright specs cover login, ticket submission,
+  polling, cross-user isolation and workflow, and `@axe-core/playwright` checks login, student
+  workspace and ticket detail. LOCAL VERIFIED: build passed and 11 tests passed (~1.3 min), with no
+  serious or critical axe violations on those three screens. This is local evidence only; no live
+  hosted browser run is asserted. After installing Playwright/axe, `npm audit` reported 6
+  vulnerabilities (2 moderate, 2 high, 2 critical), which remain an open remediation item.
+- LOCAL VERIFIED backup/restore rehearsal (`docs/evidence/backup_restore_rehearsal.json`, status
+  `PASS`): disposable `postgres:16-alpine` at `127.0.0.1:55432`, schema hash
+  `ed7d1ab744886956c3e35ddde4674a05b01da26ef8313199b2c741e35917664b`, record hash
+  `00e07e9f6182a27c59db5e2b9b0d51055011c13029485c4647b9ba4cc994d419`, stale row count 1 → 0,
+  container removed; no production data touched. This is a local rehearsal, not a hosted Neon restore.
+- Backend evidence at the time of this reconciliation: the full suite before the latest
+  malware-service tests was 218 passed / 17 warnings in 235.04s, the focused malware/attachment run
+  was 10 passed, and the final full backend rerun completed with 225 passed, 17 warnings in 265.61s
+  (0:04:25). The 17 warnings are pre-existing LangSmith deprecations.

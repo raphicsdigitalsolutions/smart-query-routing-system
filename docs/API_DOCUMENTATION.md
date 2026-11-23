@@ -20,7 +20,8 @@ be `null`.
 This document describes the implemented HTTP contract. It does **not** claim that live
 Google, SMTP, WhatsApp or OpenAI calls have been verified with real credentials; those flows
 are environment/credential-dependent and are verified in automated tests with mocked or
-local providers. No build numbers or test results are asserted here.
+local providers. Build counts are asserted only in `docs/TEST_REPORT.md`; narrow local-verification
+notes below distinguish what was tested from live hosted behavior.
 
 ---
 
@@ -35,7 +36,7 @@ All paths below are relative to `/api/v1` unless marked *(unversioned)*.
 | Status | `GET /status`, `GET /status/database`; *(unversioned)* `GET /`, `GET /health` | Public |
 | Users | `GET /users/assignable` | Staff/HOD/admin |
 | Departments | `GET /departments`, `POST /departments`, `PATCH /departments/{department_id}` | Authenticated / admin |
-| Tickets | `POST /tickets`, `GET /tickets`, `GET /tickets/{ticket_id}`, `PATCH /tickets/{ticket_id}`, `POST /tickets/{ticket_id}/assign`, `GET /tickets/{ticket_id}/messages`, `POST /tickets/{ticket_id}/messages`, `GET /tickets/{ticket_id}/attachments`, `POST /tickets/{ticket_id}/attachments`, `GET /tickets/{ticket_id}/history` | Role-scoped (see Tickets) |
+| Tickets | `POST /tickets`, `GET /tickets`, `GET /tickets/{ticket_id}`, `GET /tickets/{ticket_id}/updates`, `PATCH /tickets/{ticket_id}`, `POST /tickets/{ticket_id}/assign`, `GET /tickets/{ticket_id}/messages`, `POST /tickets/{ticket_id}/messages`, `GET /tickets/{ticket_id}/attachments`, `POST /tickets/{ticket_id}/attachments`, `GET /tickets/{ticket_id}/history` | Role-scoped (see Tickets) |
 | AI | `POST /ai/tickets/{ticket_id}/analyze`, `GET /ai/tickets/{ticket_id}/analysis`, `POST /ai/tickets/{ticket_id}/draft`, `POST /ai/tickets/{ticket_id}/approve-draft` | Staff/HOD/admin + BYOK key |
 | Settings (BYOK) | `GET /settings/api-keys`, `PUT /settings/api-keys`, `POST /settings/api-keys/validate`, `DELETE /settings/api-keys` | Authenticated, per-user |
 | Knowledge | `GET /knowledge`, `POST /knowledge`, `GET /knowledge/{document_id}`, `GET /knowledge/{document_id}/versions`, `PATCH /knowledge/{document_id}`, `DELETE /knowledge/{document_id}` | Staff+ read / HOD+ manage |
@@ -46,7 +47,7 @@ All paths below are relative to `/api/v1` unless marked *(unversioned)*.
 | Reports | `GET /reports/tickets.pdf`, `GET /reports/tickets.xlsx` | Staff/HOD/admin |
 | Notifications | `GET /notifications`, `POST /notifications/{notification_id}/read` | Authenticated, recipient-scoped |
 | Integrations | `GET /integrations/status`, `GET /integrations/whatsapp/webhook`, `POST /integrations/email/inbound`, `POST /integrations/whatsapp/inbound` | Public status / Meta verification handshake / token-gated intake |
-| Operations | `POST /tickets/escalation/run` | Admin only |
+| Operations | `POST /tickets/escalation/run`, `POST /tickets/escalation/sweep` | Admin only / secret-protected cron |
 
 ---
 
@@ -66,7 +67,7 @@ directly. These paths are an application boundary, not a new public API version.
 | `GET /api/auth/session` | Session probe used by the client provider; bootstraps the CSRF cookie for guests. |
 | `GET /api/health` | Proxies the unversioned FastAPI `/health` for the dashboard status card. |
 | `GET /api/reports/{format}` | Streams `GET /api/v1/reports/tickets.pdf` or `tickets.xlsx` through the BFF; `format` is restricted to `pdf` or `xlsx`. Cookie-authenticated GET, so it is CSRF-safe. Returns binary `Content-Type`/`Content-Disposition` with `Cache-Control: no-store`. |
-| `GET|POST|PATCH|DELETE|OPTIONS /api/backend/[...path]` | Proxies to `/api/v1/<path>` with the Bearer token attached server-side. Query strings are forwarded. |
+| `GET|POST|PUT|PATCH|DELETE|OPTIONS /api/backend/[...path]` | Proxies to `/api/v1/<path>` with the Bearer token attached server-side. Query strings are forwarded. |
 
 BFF rules:
 
@@ -79,7 +80,8 @@ BFF rules:
   logout; it was a real defect found and fixed during live validation. `GET`, `HEAD` and `OPTIONS`
   are treated as safe. A mismatch returns HTTP 403 with `code: "invalid_csrf"`.
 - The JWT is always `HttpOnly`, `SameSite=Lax`, `Secure` in production, and never written to browser
-  storage. The session lifetime matches the backend `expires_in` (60 minutes by default).
+  storage. The session lifetime matches the backend `expires_in` (60 minutes in production; the
+  automated test environment alone uses 1440 minutes).
 - Missing session or a FastAPI 401 returns a normalized 401 and clears the cookies. No backend
   secrets or JWTs are exposed to client code.
 - Browser-side requests are same-origin, so FastAPI CORS does not need a port 3000 origin.
@@ -100,7 +102,8 @@ Authorization: Bearer <access_token>
 ```
 
 Tokens are returned by `POST /api/v1/auth/login` and `POST /api/v1/auth/google`, expire after
-`ACCESS_TOKEN_EXPIRE_MINUTES` (60 by default), and are not refreshable. Missing, malformed,
+`ACCESS_TOKEN_EXPIRE_MINUTES` (production default 60 minutes; only the automated test environment
+sets 1440 minutes, pinned by `tests/test_token_expiry.py`), and are not refreshable. Missing, malformed,
 expired or inactive-account tokens return HTTP 401 with one of these codes:
 
 | Code | Meaning |
@@ -161,7 +164,8 @@ HTTP 201 response:
 ```
 
 Duplicate email returns HTTP 409 with `code: "duplicate_email"`. Passwords are hashed with Argon2id
-and are never returned.
+and are never returned. A successful registration writes an `auth.registered` audit row (email only,
+no password).
 
 ### `POST /api/v1/auth/login`
 
@@ -176,6 +180,11 @@ return the same generic HTTP 401:
   "code": "invalid_credentials"
 }
 ```
+
+Both failures and successes are audited without credentials: `auth.login_failed` records the
+email and a generic reason (`user_not_found`, `inactive_account`, `invalid_credentials`), and
+`auth.login_succeeded` records the email. No password or token value is stored in an audit row.
+The public HTTP response for a failure remains the same generic 401 shown above.
 
 Success:
 
@@ -362,10 +371,22 @@ Students only. Body:
 
 `auto_route` (bool, default `false`) and `channel` (`web` by default; `email`/`whatsapp` are set by
 the inbound adapters and passed explicitly) are also accepted. Priority values: `low`, `normal`,
-`high`, `urgent`. HTTP 201 returns the ticket with a unique `public_reference` such as
-`TKT-4AF29C10`, `status: "new"`
-and `is_escalated: false`. A `ticket.created` status history row, audit row and notification are
-written in the same flow.
+`high`, `urgent`.
+
+When routing is requested (or `department_id` is omitted), the backend first resolves an active
+department and then deterministically selects an active `staff` user in that department who is not
+in an active leave window. Candidates are ranked by the lowest number of non-terminal assigned
+tickets, then lowercase `full_name`, then user ID; HOD and admin users are never auto-assigned. On
+selection the ticket is assigned, moves from `new` to `assigned`, receives assignment/status
+history, a `ticket.instructor_auto_assigned` audit row, and one `ticket.assigned` notification to
+the instructor. The selected instructor is excluded from the department-wide `ticket.created`
+notification to prevent duplication. If no instructor is eligible, creation still succeeds; the
+ticket stays unassigned in `new`, a `ticket.instructor_routing_skipped` audit row records the reason
+and exclusion counts, and department/HOD/admin `ticket.created` notifications remain.
+
+HTTP 201 returns the ticket with a unique `public_reference` such as `TKT-4AF29C10`,
+`status: "new"` or `status: "assigned"`, and `is_escalated: false`. A `ticket.created` status
+history row, audit row and notification are written in the same flow.
 
 ### `GET /api/v1/tickets`
 
@@ -396,6 +417,17 @@ Requires authentication. Role scoping is applied automatically.
 
 Requires visibility. Returns the full ticket object with student, assignee and department names.
 
+### `GET /api/v1/tickets/{ticket_id}/updates`
+
+Requires the same ticket visibility (an invisible ID returns HTTP 404). This is the FR-06 conditional
+polling view: it returns a small status snapshot instead of the full ticket payload, with
+`ETag` and `Cache-Control: no-store` headers. If the caller sends a matching `If-None-Match`
+header, the backend returns HTTP **304 Not Modified** with no body. The ETag covers the fields that
+affect student-visible status, so a 304 means no visible status change. The Next.js ticket detail
+page polls this route through the BFF about every 15 seconds via `useTicketStatusPolling`; this is
+polling only — there is no SSE, WebSocket or push channel. Transient poll failures are ignored and
+retried on the next interval.
+
 ### `PATCH /api/v1/tickets/{ticket_id}`
 
 Requires visibility and role permission. Accepted fields: `subject`, `description`, `priority`,
@@ -419,7 +451,10 @@ closed               -> (terminal)
 
 Staff additionally cannot use transitions back to `new`. An invalid transition returns HTTP 409
 with `code: "invalid_status_transition"`. Each change appends `ticket_status_history` and an audit
-row. Escalation and administrative overrides are also audited.
+row. Manual escalation (`is_escalated: true`) and de-escalation (`is_escalated: false`) also append
+`ticket_status_history`, write `ticket.escalated` / `ticket.deescalated` audit rows with
+`previous_is_escalated`/`new_is_escalated` and actor/timestamp metadata, and notify active
+ticket-authorized staff/HOD/admin recipients without duplicates.
 
 Response:
 
@@ -484,7 +519,13 @@ safe metadata and a SHA-256 checksum are persisted in `message_attachments`. The
 associated message and one `attachment.uploaded` audit row in the same transaction. Public uploads
 follow the normal public-reply notification rules; internal uploads create no notifications. Invalid
 extensions, mismatched content, empty files, or oversized files return 413/415/422 and no message or
-file is retained. The response contains only safe metadata (no disk path or checksum):
+file is retained. Optional malware scanning (`MALWARE_SCAN_ENABLED`, default `false`) can call a
+configured scanner before persisting bytes; when enabled without a command, or when the scanner is
+unavailable/errors, the upload fails closed with HTTP 503 `attachment_scan_unavailable`, and an
+infected file returns HTTP 422 `attachment_malware_detected` with no database row or stored bytes.
+Local ClamAV integration is verified (see `docs/evidence/malware_scan_verification.json`); no scanner
+is configured in the hosted environment, and a Windows mount fixture was not a passing check. The
+response contains only safe metadata (no disk path or checksum):
 
 ```json
 { "id": 1, "message_id": 9, "file_name": "notes.txt", "content_type": "text/plain", "size_bytes": 28, "created_at": "2026-11-21T12:10:00Z" }
@@ -501,15 +542,18 @@ so a student never receives an internal note's attachment metadata.
 
 ### `GET /api/v1/tickets/{ticket_id}/history`
 
-Requires visibility. Returns status and assignment timelines in ascending order:
+Requires visibility. Returns status, assignment, and escalation/de-escalation timelines in ascending order:
 
 ```json
 {
   "success": true,
   "status_changes": [
-    { "id": 1, "from_status": null, "to_status": "new", "changed_by_id": 1, "note": "Ticket submitted", "created_at": "2026-11-21T12:00:00Z" }
+    { "id": 1, "from_status": null, "to_status": "new", "changed_by_id": 1, "changed_by_name": "Ada Student", "note": "Ticket submitted", "created_at": "2026-11-21T12:00:00Z" }
   ],
-  "assignments": []
+  "assignments": [],
+  "escalations": [
+    { "id": 45, "action": "escalated", "from_escalated": false, "to_escalated": true, "actor_id": 7, "actor_name": "Dr. Barbara Liskov", "actor_role": "hod", "mode": "manual", "note": "Manually escalated", "created_at": "2026-11-23T15:01:02Z" }
+  ]
 }
 ```
 
@@ -830,7 +874,9 @@ The `auto_reply` text is read by the reply worker while an active window covers 
 
 ### `GET /api/v1/audit`
 
-Admin only. Returns real `AuditLog` rows (there are no synthetic authentication audits).
+Admin only. Returns real `AuditLog` rows, including `auth.registered`, `auth.login_succeeded` and
+`auth.login_failed` from the password flows. Auth rows contain email/reason context only — never a
+password, token or API key. There are no synthetic audit rows.
 
 | Query parameter | Type | Notes |
 | --- | --- | --- |
@@ -971,9 +1017,21 @@ The sweep selects non-terminal tickets older than `SLA_HOURS` (default 24) that 
 escalated, marks each `is_escalated: true` with `escalated_at`, writes a status-history row and an
 audit record (`ticket.escalated_automatically`, system actor), and notifies the student, assignee,
 department HODs and admins. Because already-escalated rows are skipped, repeated calls do not
-double-escalate. In `ENVIRONMENT=production` the same sweep also runs periodically in-process every
-`ESCALATION_SWEEP_MINUTES`; it is never started in tests/development. This endpoint is deliberately
-admin-only.
+double-escalate. In `ENVIRONMENT=production` the same sweep can also run in-process every
+`ESCALATION_SWEEP_MINUTES`, but that worker is disabled in the serverless deployment. This endpoint
+is deliberately admin-only.
+
+### `POST /api/v1/tickets/escalation/sweep`
+
+Secret-protected serverless cron trigger for the same deterministic sweep. It is **not**
+session/admin-authenticated and requires header `X-Cron-Secret: <ESCALATION_CRON_SECRET>`. The
+endpoint fails closed: HTTP 503 `escalation_cron_not_configured` when no cron secret is configured,
+and HTTP 401 `invalid_cron_secret` for a missing or mismatched header (constant-time comparison; the
+secret is never logged). On success it returns the same `{ "success": true, "scanned": n,
+"escalated": m }` shape and is repeat-safe. `backend/vercel.json` configures an hourly call
+(`0 * * * *`) to this path. LOCAL VERIFIED: endpoint and configuration tests
+(`tests/test_escalation_serverless.py`). LIVE hosted cron execution is **NOT VERIFIED**; no provider
+scheduler or hosted setting was changed as part of this reconciliation.
 
 ---
 
@@ -1003,6 +1061,8 @@ raised as `AppError` (including the 402/413/429 codes above) all use the same sh
   `BYOK_ENCRYPTION_KEY` are mandatory in production, and `ALLOW_GLOBAL_OPENAI_FALLBACK` cannot be
   enabled in production.
 - `JWT_ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES` and `MIN_PASSWORD_LENGTH` tune authentication.
+  `ACCESS_TOKEN_EXPIRE_MINUTES` defaults to 60 in production; the test settings set 1440 minutes and
+  `tests/test_token_expiry.py` pins both behaviors.
 - Backend CORS origins come from `BACKEND_CORS_ORIGINS` (Vite dev server by default).
 - Database settings come from `DATABASE_URL`, `TEST_DATABASE_URL`, `DB_POOL_SIZE`, `DB_MAX_OVERFLOW`,
   `DB_POOL_TIMEOUT` and `DB_ECHO` in `backend/.env`.
@@ -1020,6 +1080,9 @@ raised as `AppError` (including the 402/413/429 codes above) all use the same sh
   `SMTP_ATTEMPTS`, `EMAIL_NOTIFICATIONS_ENABLED`. Outbound WhatsApp: `WHATSAPP_ENABLED`,
   `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`,
   `WHATSAPP_API_VERSION`.
-- SLA/operations: `SLA_HOURS`, `ESCALATION_SWEEP_MINUTES`. Uploads: `MAX_UPLOAD_BYTES`,
-  `ALLOWED_UPLOAD_TYPES`.
+- SLA/operations: `SLA_HOURS`, `ESCALATION_SWEEP_MINUTES`, `ESCALATION_CRON_SECRET` (required for
+  `POST /tickets/escalation/sweep`; empty disables that trigger). Uploads: `MAX_UPLOAD_BYTES`,
+  `ALLOWED_UPLOAD_TYPES`, `ATTACHMENT_STORAGE_DIR`, and optional `MALWARE_SCAN_ENABLED` (default
+  `false`), `MALWARE_SCAN_COMMAND`, `MALWARE_SCAN_TIMEOUT_SECONDS`.
 - All `.env.example` files contain placeholders only; never commit real keys, tokens or passwords.
+- **2026-11-24 update:** BFF auth validation routes (`/api/auth/login` and `/api/auth/register`) were updated cleanly for Zod `4.6.7` (`z.email()`, `z.flattenError()`), preserving the identical `{ success: false, error, detail, code }` contract verified by Playwright E2E and TypeScript checks.

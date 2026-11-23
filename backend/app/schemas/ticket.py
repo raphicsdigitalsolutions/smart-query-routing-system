@@ -17,8 +17,9 @@ class TicketCreate(BaseModel):
     department_id: int | None = Field(default=None, gt=0)
     category: str | None = Field(default=None, max_length=80)
     priority: TicketPriority = TicketPriority.NORMAL
-    # Auto-routing is deterministic and only used when no department was
-    # supplied (or when the caller explicitly asks for a routed department).
+    # Auto-routing is deterministic. It resolves a department when no
+    # department is supplied (or when explicitly requested) and then assigns
+    # an available instructor in that department when one can be found.
     auto_route: bool = False
     channel: str = "web"
 
@@ -88,6 +89,17 @@ class TicketResponse(ORMModel):
     updated_at: datetime
 
 
+class TicketStatusSnapshot(ORMModel):
+    """Small pollable view used by students/staff to track live ticket status."""
+
+    id: int
+    public_reference: str
+    status: str
+    assigned_to: int | None
+    is_escalated: bool
+    updated_at: datetime
+
+
 class TicketListResponse(BaseModel):
     success: bool = True
     items: list[TicketResponse]
@@ -139,6 +151,7 @@ class StatusHistoryResponse(ORMModel):
     from_status: str | None
     to_status: str
     changed_by_id: int | None
+    changed_by_name: str | None = None
     note: str | None
     created_at: datetime
 
@@ -148,6 +161,22 @@ class AssignmentHistoryResponse(ORMModel):
     from_assignee_id: int | None
     to_assignee_id: int | None
     changed_by_id: int | None
+    from_assignee_name: str | None = None
+    to_assignee_name: str | None = None
+    changed_by_name: str | None = None
+    created_at: datetime
+
+
+class EscalationHistoryResponse(BaseModel):
+    id: int
+    action: str
+    from_escalated: bool
+    to_escalated: bool
+    actor_id: int | None = None
+    actor_name: str | None = None
+    actor_role: str | None = None
+    mode: str = "manual"
+    note: str | None = None
     created_at: datetime
 
 
@@ -155,6 +184,7 @@ class TicketHistoryResponse(BaseModel):
     success: bool = True
     status_changes: list[StatusHistoryResponse]
     assignments: list[AssignmentHistoryResponse]
+    escalations: list[EscalationHistoryResponse] = Field(default_factory=list)
 
 
 class MutationResponse(BaseModel):

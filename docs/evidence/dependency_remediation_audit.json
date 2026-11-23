@@ -1,0 +1,392 @@
+{
+  "audit_date": "2026-11-23",
+  "remediation_completed_date": "2026-11-24",
+  "audit_scope": "remediated_option_b_and_reverified",
+  "remediation_status": "remediated_locally_0_vulnerabilities",
+  "post_remediation_verification": {
+    "npm_audit_total_vulnerabilities": 0,
+    "npm_audit_prod_vulnerabilities": 0,
+    "installed_targets": {
+      "vitest": "4.1.12",
+      "vite": "^7.3.8",
+      "@testing-library/dom": "^10.4.2",
+      "zod": "4.6.7",
+      "next": "16.4.6",
+      "eslint-config-next": "16.4.6"
+    },
+    "evidence_files": [
+      "docs/evidence/npm_audit_post_remediation.json",
+      "docs/evidence/npm_audit_post_remediation_prod.json"
+    ]
+  },
+  "runtime_environment": {
+    "node_version": "v22.23.2",
+    "npm_version": "10.9.0",
+    "docker_node_base": "node:20-alpine",
+    "docker_production_install": "npm ci --omit=dev --no-audit --no-fund"
+  },
+  "manifests_inspected": [
+    {
+      "path": "frontend-next/package.json",
+      "lockfile": "frontend-next/package-lock.json",
+      "package_name": "smartquery-next",
+      "total_vulnerabilities": 6,
+      "prod_vulnerabilities": 3,
+      "dev_vulnerabilities": 3,
+      "severity_counts_all": {
+        "info": 0,
+        "low": 0,
+        "moderate": 2,
+        "high": 2,
+        "critical": 2,
+        "total": 6
+      },
+      "severity_counts_prod_only": {
+        "info": 0,
+        "low": 0,
+        "moderate": 1,
+        "high": 2,
+        "critical": 0,
+        "total": 3
+      },
+      "unique_ghsa_count": 10
+    },
+    {
+      "path": "frontend/package.json",
+      "lockfile": "frontend/package-lock.json",
+      "package_name": "smartquery-frontend",
+      "notes": "Legacy Phase 4 Vite SPA; retained on disk with 0 known vulnerabilities.",
+      "total_vulnerabilities": 0,
+      "prod_vulnerabilities": 0,
+      "dev_vulnerabilities": 0,
+      "severity_counts_all": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "outdated_non_vulnerable": [
+        {
+          "package": "@vitejs/plugin-react",
+          "current": "4.7.0",
+          "wanted": "4.7.0",
+          "latest": "6.3.0"
+        },
+        {
+          "package": "lucide-react",
+          "current": "0.500.0",
+          "wanted": "0.500.0",
+          "latest": "1.78.0"
+        },
+        {
+          "package": "vite",
+          "current": "6.4.6",
+          "wanted": "6.4.6",
+          "latest": "8.3.8"
+        }
+      ]
+    }
+  ],
+  "prior_audit_verification": {
+    "all_six_vulnerabilities_still_present": true,
+    "verified_by_commands": [
+      "npm audit (in frontend-next/)",
+      "npm audit --omit=dev (in frontend-next/)",
+      "npm outdated (in frontend-next/)",
+      "npm explain next postcss zod vitest @vitest/mocker tinypool (in frontend-next/)",
+      "npm ls vite zod next vitest tinypool @vitest/mocker postcss eslint-config-next (in frontend-next/)",
+      "npm audit && npm outdated (in frontend/)"
+    ]
+  },
+  "vulnerable_packages": [
+    {
+      "package": "next",
+      "installed_version": "15.5.29",
+      "declared_spec": "15.5.29",
+      "relationship": "direct",
+      "scope": "production_and_build",
+      "dependency_paths": [
+        "node_modules/next (smartquery-next -> next@15.5.29)",
+        "peerDependency via @mui/material-nextjs@7.3.10"
+      ],
+      "severity": "moderate",
+      "vulnerable_range": "9.3.4-canary.0 - 16.3.0-preview.10",
+      "advisories": [],
+      "transitive_via": [
+        "postcss"
+      ],
+      "recommended_target_version": "16.4.6",
+      "paired_packages": [
+        "eslint-config-next@16.4.6"
+      ],
+      "upgrade_classification": "major_required",
+      "safe_patch_minor_available": false,
+      "node_engine_requirement": ">=20.9.0",
+      "affected_repo_files": [
+        "frontend-next/package.json",
+        "frontend-next/eslint.config.mjs",
+        "frontend-next/src/app/layout.tsx",
+        "frontend-next/next.config.ts",
+        "frontend-next/src/app/api/auth/login/route.ts",
+        "frontend-next/src/app/api/auth/register/route.ts",
+        "frontend-next/src/app/api/auth/google/route.ts",
+        "frontend-next/src/app/api/backend/[...path]/route.ts",
+        "frontend-next/src/app/api/reports/[format]/route.ts",
+        "frontend-next/src/app/(protected)/tickets/[ticketId]/page.tsx",
+        "frontend-next/src/lib/auth/cookies.ts"
+      ],
+      "compatibility_risks": [
+        "eslint-config-next 15.x -> 16.x migrates to native ESLint 9 flat config, which commonly breaks FlatCompat usage in eslint.config.mjs.",
+        "src/app/layout.tsx imports @mui/material-nextjs/v15-appRouter and should move to @mui/material-nextjs/v16-appRouter (already present in @mui/material-nextjs@7.3.10).",
+        "Next.js 16 bundler/Turbopack and route typing defaults require clean verification with MUI 7 and Tailwind v4."
+      ]
+    },
+    {
+      "package": "postcss",
+      "installed_version": "8.4.31",
+      "declared_spec": null,
+      "relationship": "transitive",
+      "scope": "production_and_build",
+      "dependency_paths": [
+        "node_modules/next/node_modules/postcss (next@15.5.29 -> postcss@8.4.31)"
+      ],
+      "non_vulnerable_copies_note": "Root node_modules/postcss is 8.5.33 (used by @tailwindcss/postcss@4.3.5 and vite@7.3.8) and is NOT vulnerable.",
+      "severity": "high",
+      "vulnerable_range": "<=8.5.22",
+      "advisories": [
+        {
+          "id": "GHSA-qx2v-qp2m-jg93",
+          "severity": "moderate",
+          "cwe": ["CWE-79"],
+          "cvss_score": null,
+          "range": "<8.5.10"
+        },
+        {
+          "id": "GHSA-6g55-p6wh-862q",
+          "severity": "high",
+          "cwe": ["CWE-22", "CWE-200"],
+          "cvss_score": 7.5,
+          "range": "<=8.5.11"
+        },
+        {
+          "id": "GHSA-fxqj-rqcc-2cmp",
+          "severity": "moderate",
+          "cwe": ["CWE-22", "CWE-200"],
+          "cvss_score": null,
+          "range": "<=8.5.22"
+        },
+        {
+          "id": "GHSA-r28c-9q8g-f849",
+          "severity": "high",
+          "cwe": ["CWE-22"],
+          "cvss_score": 7.5,
+          "range": "<=8.5.17"
+        }
+      ],
+      "recommended_target_version": ">=8.5.23 (bundled in next@16.4.6)",
+      "upgrade_classification": "major_required_via_parent_next",
+      "safe_patch_minor_available": false,
+      "affected_repo_files": [
+        "frontend-next/postcss.config.mjs",
+        "frontend-next/src/app/globals.css"
+      ],
+      "compatibility_risks": [
+        "Cannot be resolved cleanly inside next@15.5.29 without overriding Next.js's private bundled postcss dependency; official fix is next@16.4.6."
+      ]
+    },
+    {
+      "package": "zod",
+      "installed_version": "3.25.76",
+      "declared_spec": "^3.24.2",
+      "relationship": "direct",
+      "scope": "production_and_bff_runtime",
+      "dependency_paths": [
+        "node_modules/zod (smartquery-next -> zod@^3.24.2)"
+      ],
+      "severity": "high",
+      "vulnerable_range": "<4.6.6",
+      "advisories": [
+        {
+          "id": "GHSA-mrhx-c7xc-m3w5",
+          "severity": "high",
+          "cwe": ["CWE-770"],
+          "cvss_score": 7.5,
+          "range": "<4.6.6",
+          "title": "Zod memory exhaustion when validating oversized constrained collections"
+        }
+      ],
+      "recommended_target_version": "4.6.7",
+      "upgrade_classification": "major_required",
+      "safe_patch_minor_available": false,
+      "affected_repo_files": [
+        "frontend-next/package.json",
+        "frontend-next/src/app/api/auth/login/route.ts",
+        "frontend-next/src/app/api/auth/register/route.ts",
+        "frontend-next/src/app/api/auth/google/route.ts"
+      ],
+      "compatibility_risks": [
+        "z.string().email() in register/route.ts is deprecated/changed in Zod v4 in favor of top-level z.email().",
+        "parsed.error.flatten() in login/route.ts and register/route.ts is deprecated/changed in Zod v4 in favor of z.flattenError(parsed.error).",
+        "Current runtime exploitability is low because only bounded string schemas (max 128, max 255, max 20000) exist, with no array/set/map collection schemas."
+      ]
+    },
+    {
+      "package": "vitest",
+      "installed_version": "3.2.4",
+      "declared_spec": "^3.2.4",
+      "wanted_patch_minor": "3.2.7",
+      "latest_version": "5.1.1",
+      "relationship": "direct",
+      "scope": "dev_and_test_only",
+      "dependency_paths": [
+        "node_modules/vitest (smartquery-next -> vitest@^3.2.4)"
+      ],
+      "severity": "critical",
+      "vulnerable_range": "<=4.1.10",
+      "advisories": [
+        {
+          "id": "GHSA-5xrq-8626-4rwp",
+          "severity": "critical",
+          "cwe": ["CWE-22", "CWE-862"],
+          "cvss_score": 9.8,
+          "range": "<3.2.6"
+        },
+        {
+          "id": "GHSA-82fw-gwwq-j7x9",
+          "severity": "moderate",
+          "cwe": ["CWE-22"],
+          "cvss_score": 5.9,
+          "range": ">=2.1.0 <4.1.11"
+        }
+      ],
+      "transitive_via": [
+        "@vitest/mocker",
+        "tinypool"
+      ],
+      "recommended_target_version": "4.1.12",
+      "alternative_latest_version": "5.1.1 (requires Node ^22.12.0 || ^24.0.0 || >=26.0.0, incompatible with Dockerfile FROM node:20-alpine unless Dockerfile Node base is upgraded)",
+      "upgrade_classification": "partial_patch_for_3_2_7_major_required_for_full_remediation",
+      "safe_patch_minor_available": true,
+      "patch_minor_note": "3.2.7 resolves only GHSA-5xrq-8626-4rwp; GHSA-82fw-gwwq-j7x9 plus @vitest/mocker and tinypool advisories require vitest >= 4.1.12.",
+      "node_engine_requirement": "4.1.12 supports Node ^20.0.0 || ^22.0.0 || >=24.0.0 and Vite ^6 || ^7 || ^8",
+      "affected_repo_files": [
+        "frontend-next/package.json",
+        "frontend-next/vitest.config.ts",
+        "frontend-next/src/test/setup.ts",
+        "frontend-next/src/hooks/useTicketStatusPolling.test.tsx"
+      ],
+      "compatibility_risks": [
+        "Minimal codebase footprint (1 test file with 3 unit tests using vi.mock, vi.mocked, vi.fn and jsdom).",
+        "Vitest 5.1.1 would break Dockerfile `deps` stage (`FROM node:20-alpine`), making Vitest 4.1.12 the safer Node-20-compatible target unless Dockerfile is bumped to Node 22+."
+      ]
+    },
+    {
+      "package": "@vitest/mocker",
+      "installed_version": "3.2.4",
+      "declared_spec": null,
+      "relationship": "transitive",
+      "scope": "dev_and_test_only",
+      "dependency_paths": [
+        "node_modules/vitest/node_modules/@vitest/mocker (vitest@3.2.4 -> @vitest/mocker@3.2.4)"
+      ],
+      "severity": "moderate",
+      "vulnerable_range": "<=4.1.11",
+      "advisories": [
+        {
+          "id": "GHSA-82fw-gwwq-j7x9",
+          "severity": "moderate",
+          "cwe": ["CWE-22"],
+          "cvss_score": 5.9,
+          "range": "<4.1.11"
+        },
+        {
+          "id": "GHSA-qxg6-89mg-rqv8",
+          "severity": "moderate",
+          "cwe": ["CWE-94", "CWE-116", "CWE-306"],
+          "cvss_score": 4.7,
+          "range": "<4.1.12"
+        }
+      ],
+      "recommended_target_version": ">=4.1.12 (via vitest@4.1.12)",
+      "upgrade_classification": "major_required_via_parent_vitest",
+      "safe_patch_minor_available": false,
+      "affected_repo_files": [
+        "frontend-next/src/hooks/useTicketStatusPolling.test.tsx"
+      ],
+      "compatibility_risks": [
+        "Tests mocking (`vi.mock` / `vi.mocked`) in Vitest 4."
+      ]
+    },
+    {
+      "package": "tinypool",
+      "installed_version": "1.1.1",
+      "declared_spec": null,
+      "relationship": "transitive",
+      "scope": "dev_and_test_only",
+      "dependency_paths": [
+        "node_modules/tinypool (vitest@3.2.4 -> tinypool@1.1.1)"
+      ],
+      "severity": "critical",
+      "vulnerable_range": "<=2.1.1",
+      "advisories": [
+        {
+          "id": "GHSA-5gmw-xhrv-c9v3",
+          "severity": "critical",
+          "cwe": ["CWE-1321"],
+          "cvss_score": null,
+          "range": "<=2.1.0"
+        },
+        {
+          "id": "GHSA-85c8-ppgw-ccpr",
+          "severity": "critical",
+          "cwe": ["CWE-94", "CWE-1321"],
+          "cvss_score": null,
+          "range": "<2.1.2"
+        }
+      ],
+      "recommended_target_version": ">=2.1.2 (via vitest@4.1.12)",
+      "upgrade_classification": "major_required_via_parent_vitest",
+      "safe_patch_minor_available": false,
+      "affected_repo_files": [
+        "frontend-next/vitest.config.ts"
+      ],
+      "compatibility_risks": [
+        "Test worker pool execution under jsdom on Windows."
+      ]
+    }
+  ],
+  "options_summary": {
+    "option_a_minimum_risk_patch_minor": {
+      "actions": ["Upgrade vitest 3.2.4 -> 3.2.7 only"],
+      "vulnerabilities_resolved": 0,
+      "advisories_resolved": 1,
+      "remaining_vulnerabilities": 6,
+      "remaining_critical": 2,
+      "note": "Resolves GHSA-5xrq-8626-4rwp on vitest, but GHSA-82fw-gwwq-j7x9, @vitest/mocker, tinypool, next, postcss, and zod remain flagged."
+    },
+    "option_b_recommended_major_remediation": {
+      "target_upgrades": [
+        "vitest@4.1.12",
+        "zod@4.6.7",
+        "next@16.4.6",
+        "eslint-config-next@16.4.6"
+      ],
+      "vulnerabilities_resolved": 6,
+      "advisories_resolved": 10,
+      "remaining_vulnerabilities": 0,
+      "migration_order": [
+        "1. Dev toolchain: vitest@4.1.12 (compatible with Node 20 in Dockerfile and Vite 7.3.8)",
+        "2. BFF validation: zod@4.6.7 + update 3 auth route files for Zod v4 APIs",
+        "3. Framework + lint: next@16.4.6 + eslint-config-next@16.4.6 + flat eslint.config.mjs + @mui/material-nextjs/v16-appRouter"
+      ]
+    },
+    "option_c_temporary_mitigations": {
+      "runtime_image_exclusions": "Keep npm ci --omit=dev in production container so vitest/@vitest/mocker/tinypool never ship to production.",
+      "dev_server_isolation": "Never enable Vitest UI or bind Vitest dev/test runners to 0.0.0.0; keep bound to localhost only.",
+      "zod_input_bounding": "Maintain existing explicit string max-length bounds (max 128/255/20000) and avoid array/set/map schemas on unauthenticated BFF endpoints.",
+      "next_postcss_isolation": "postcss@8.4.31 under next runs at build time / internal CSS processing on trusted repo stylesheets only; never feed untrusted external CSS into Next CSS build."
+    }
+  }
+}

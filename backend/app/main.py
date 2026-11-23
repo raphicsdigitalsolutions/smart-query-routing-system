@@ -49,7 +49,8 @@ async def _escalation_worker() -> None:
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """Release pooled database connections when the server shuts down."""
-    task = asyncio.create_task(_escalation_worker()) if settings.ENVIRONMENT == "production" else None
+    worker_enabled = settings.ENVIRONMENT == "production" and settings.BACKGROUND_WORKER_ENABLED
+    task = asyncio.create_task(_escalation_worker()) if worker_enabled else None
     try:
         yield
     finally:

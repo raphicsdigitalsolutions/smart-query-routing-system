@@ -96,7 +96,7 @@ export function CreateTicketForm({ onCreated }: CreateTicketFormProps) {
           <PopoverContent>
             <p className="font-semibold text-navy-900">How routing works</p>
             <p className="mt-1 leading-relaxed">
-              Your query is created with a public reference. Staff and HOD users can then assign it to the right person.
+              Your query is created with a public reference. Routing can choose a department and, when an instructor is available, assign it automatically.
             </p>
           </PopoverContent>
         </Popover>
@@ -172,7 +172,7 @@ export function CreateTicketForm({ onCreated }: CreateTicketFormProps) {
             <span>
               <span className="block font-semibold">Auto-route this query</span>
               <span id="ticket-auto-route-help" className="block text-xs font-normal text-slate-500">
-                Let the routing engine choose a department when none is selected.
+                Let the routing engine choose a department and an available instructor when none is selected.
               </span>
             </span>
           </label>

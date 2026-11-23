@@ -1,6 +1,6 @@
 # Development Roadmap
 
-Phases 1–6 below are historical, completed stages. Phase 7 is the current completed implementation and packaging stage. “Complete” means implemented and exercised locally or with deterministic tests; it does **not** mean live provider checks, image builds, or a public deployment were performed.
+Phases 1–6 below are historical, completed stages. Phase 7 was the completed implementation and packaging stage. “Complete” means implemented and exercised locally or with deterministic tests. A live hackathon deployment was subsequently executed; see `docs/HACKATHON_DEPLOYMENT_REPORT.md` for actual endpoints, verification, and remaining governance gaps.
 
 ## Phase 1: Initial setup ✅
 
@@ -128,10 +128,12 @@ Phases 1–6 below are historical, completed stages. Phase 7 is the current comp
 
 ### Known limitations
 
-- Browser automation coverage was manual rather than a committed Next.js test suite.
+- Browser automation coverage was manual rather than a committed Next.js test suite during Phase 5;
+  a working-tree Playwright + axe suite was added in the 2026-11-23 reconciliation below.
 - Existing Vite JWTs are module-memory only and are not shared; users sign in once in Next.js.
-- `npm audit` reported 3 dependency advisories (PostCSS via Next.js 15 and Zod 3); no breaking
-  forced upgrade to Next.js 16 / Zod 4 was applied in Phase 5.
+- `npm audit` reported 3 dependency advisories in Phase 5 (PostCSS via Next.js 15 and Zod 3); no
+  breaking forced upgrade was applied. The current result is 6 vulnerabilities — see the
+  2026-11-23 reconciliation below.
 - There is still no backend user-CRUD endpoint, refresh token flow or password reset.
 
 ### Intentionally not part of Phase 5 (later Phase 7 work)
@@ -206,7 +208,9 @@ Phases 1–6 below are historical, completed stages. Phase 7 is the current comp
   synthetic harness, which is test infrastructure and not real university performance.
 - Retrieval originally abstained until an approved knowledge file was configured; Phase 7 added
   database-backed approved knowledge documents with versioning and HOD/admin approval.
-- The Next.js app still has no committed automated frontend test suite.
+- The Next.js app had no committed automated frontend test suite during Phase 6; this was later
+  addressed by the Playwright + axe suite and Vitest polling-hook tests recorded in the
+  2026-11-23 reconciliation below.
 - AI output remains a recommendation/draft; staff must review correctness before approval.
 
 ### Intentionally not part of Phase 6 (later Phase 7 work)
@@ -311,8 +315,10 @@ Phase 7 completed the original integration and platform requirements as code and
       `44273a775ed8` → `47ebce833eae` → `b7d4e91c2a83` → `feedf21773e1`.
 - [x] The OpenAPI schema registers **41 OpenAPI paths** after adding ticket attachments and the
       WhatsApp verification handshake.
-- [x] The final full backend suite result is **187 passed** (17 pre-existing LangSmith deprecation
-      warnings), including the AI rate-limit, attachment, and webhook regression tests.
+- [x] The FINAL full backend suite result is **225 passed, 17 warnings in 265.61s (0:04:25)**
+      (17 pre-existing LangSmith deprecation warnings), including the AI rate-limit, attachment,
+      webhook, FR-04b/FR-13 instructor-routing, FR-06 polling, FR-07 escalation, FR-14 auth-audit
+      and token-expiry regression tests. Older 187/202 counts were intermediate runs.
 - [x] Automated tests remain deterministic: mocked LLM responses and synthetic evaluation data; no
       paid provider calls are part of the automated suite.
 - [x] Updated `README.md`, this roadmap, `docs/DEPLOYMENT_GUIDE.md`, `docs/USER_GUIDE.md`,
@@ -326,8 +332,55 @@ Phase 7 completed the original integration and platform requirements as code and
 - [ ] Run live provider checks after credentials/approval are supplied: OpenAI live evaluation,
       SMTP delivery, Meta WhatsApp delivery/inbound verification and Google OAuth.
 - [ ] Deploy the stack and publish images only after explicit approval; public deployment is not
-      approved.
-- [ ] Add committed Next.js e2e/accessibility tests, coverage thresholds and CI checks.
+      approved and the release verdict remains FAIL.
+- [x] Add working-tree Next.js e2e/accessibility tests — done in the 2026-11-23 reconciliation
+      (`11 passed (1.3m)`, no serious/critical axe violations). Coverage thresholds and CI checks
+      remain future work.
 - [ ] Add a real labelled evaluation dataset and interpret live results with real privacy approval.
 - [ ] Add refresh tokens, password reset and backend user CRUD if they are still desired.
+- [ ] Verify the hosted escalation cron and configure `ESCALATION_CRON_SECRET` on the target host.
+- [ ] Rotate/revoke the secrets identified in the redacted secret audit; no rotation was performed.
+- [ ] Obtain approval for the Next.js/Zod and test-toolchain upgrades behind the 6 npm advisories.
+- [ ] Obtain GHCR `write:packages` permission before any registry publication.
 - [x] Author `docs/TEST_REPORT.md` and re-run the full suite after the final regression addition.
+
+## 2026-11-23 reconciliation (post-Phase 7 verification)
+
+This section supersedes stale test/build/QA numbers in the historical phase notes above. It records
+local evidence only, changes no credentials, registry, deployment or production data, and does
+**not** revoke the `FAIL — DO NOT DEPLOY` decision in `docs/RELEASE_READINESS.md`.
+
+- [x] FINAL full backend suite from `backend/`:
+      `.\.venv\Scripts\python.exe -m pytest -q` → `225 passed, 17 warnings in 265.61s (0:04:25)`.
+      Warnings are pre-existing LangSmith `asyncio.iscoroutinefunction` deprecations. Focused
+      malware/attachment tests: `10 passed, 17 warnings in 7.63s`.
+- [x] Working-tree `frontend-next/e2e/` Playwright + axe suite: `npm run test:e2e` → `11 passed (1.3m)`;
+      `pretest` `next build` passed; no serious/critical axe violations on login, student workspace
+      or ticket detail. Vitest `useTicketStatusPolling.test.tsx` exists; typecheck/lint/build passed.
+- [x] FR-04b/FR-13: deterministic, staff-only instructor routing (`test_instructor_routing.py`),
+      active `InstructorLeave` windows excluded, HOD/admin never auto-assigned, overrides audited.
+- [x] FR-06: conditional `GET /api/v1/tickets/{id}/updates` (ETag/304) and frontend
+      `useTicketStatusPolling` hook; local-verified. This is **polling, not SSE/push**.
+- [x] FR-07: secret-protected `POST /api/v1/tickets/escalation/sweep` and hourly `backend/vercel.json`
+      cron entry (`test_escalation_serverless.py`). **Live hosted cron execution NOT VERIFIED.**
+- [x] FR-14: password register/login success and failure audit events without passwords/secrets
+      (`test_auth_audit.py`).
+- [x] `test_token_expiry.py` asserts production 60-minute default; 1440 minutes is test-only.
+- [x] Backup/restore rehearsal PASS in `docs/evidence/backup_restore_rehearsal.json`: disposable
+      `postgres:16-alpine` at `127.0.0.1:55432`, schema hash
+      `ed7d1ab744886956c3e35ddde4674a05b01da26ef8313199b2c741e35917664b`, record hash
+      `00e07e9f6182a27c59db5e2b9b0d51055011c13029485c4647b9ba4cc994d419`, stale rows 1 → 0,
+      container removed, production untouched.
+- [x] Malware integration evidence `PASS_LOCAL_INTEGRATION_ONLY` in
+      `docs/evidence/malware_scan_verification.json`: real ClamAV digest
+      `sha256:64e30c0bf976198024deb3dc6d5cfe2485fb969c0f73549ba0fdb364b9469614`, clean `OK`/exit 0,
+      in-container base64 EICAR `FOUND`/exit 1. A Windows-mounted EICAR fixture failed and is not
+      claimed as a pass. `MALWARE_SCAN_ENABLED=false` by default; not deployed.
+- [x] Secret audit (`docs/evidence/secret_audit.json`, `docs/SECRET_AUDIT_REMEDIATION_PLAN.md`):
+      307 tracked files, 16 workspace potential secrets, 12 git-history potential secrets,
+      453 docker-image potential secrets, 4 current-local-env matches; **no rotation/revocation**.
+- [x] `npm audit`: 6 vulnerabilities (2 moderate, 2 high, 2 critical) in
+      `docs/evidence/npm_audit_summary.json`; not auto-fixed pending approval for major
+      Next.js/Zod and test-toolchain upgrades.
+- [ ] GHCR publication remains blocked by missing `write:packages`; registry unchanged. Production
+      and public release verdict remains FAIL.

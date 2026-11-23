@@ -217,9 +217,14 @@ class Settings(BaseSettings):
     BYOK_ENCRYPTION_KEY: str = ""
     ALLOW_GLOBAL_OPENAI_FALLBACK: bool = False
 
-    # Deterministic SLA / escalation worker.
+    # Deterministic SLA / escalation worker. Serverless deployments have no
+    # long-lived process, so they can disable the in-process worker while
+    # keeping production secret validation active. A separate cron secret
+    # allows an external scheduler to trigger the same repeat-safe sweep.
     SLA_HOURS: int = Field(default=24, ge=1, le=720)
     ESCALATION_SWEEP_MINUTES: int = Field(default=60, ge=1, le=1440)
+    BACKGROUND_WORKER_ENABLED: bool = True
+    ESCALATION_CRON_SECRET: str = ""
 
     # Uploads and abuse controls.
     MAX_UPLOAD_BYTES: int = Field(default=5 * 1024 * 1024, ge=1024, le=50 * 1024 * 1024)
@@ -227,6 +232,11 @@ class Settings(BaseSettings):
     # Ticket attachment bytes live outside the web root and the database.
     # Empty resolves to <backend cwd>/var/attachments for local development.
     ATTACHMENT_STORAGE_DIR: str = ""
+    # Optional malware scanning. When enabled, uploads fail closed if the scanner
+    # is unavailable or reports an infected file.
+    MALWARE_SCAN_ENABLED: bool = False
+    MALWARE_SCAN_COMMAND: str = ""
+    MALWARE_SCAN_TIMEOUT_SECONDS: float = Field(default=20.0, gt=0, le=120)
     AI_RATE_LIMIT_PER_MINUTE: int = Field(default=20, ge=1, le=300)
 
     @model_validator(mode="after")

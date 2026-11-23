@@ -1,0 +1,28 @@
+﻿{
+    "status":  "PASS",
+    "executed_at_utc":  "2026-11-23T21:33:58.1281944Z",
+    "image":  "postgres:16-alpine",
+    "image_digest":  "postgres@sha256:f2f98726820d0342055351c6e9d36e705f5bfffb3dd53ff556325114b08afb6d",
+    "container":  "smartquery-backup-restore-rehearsal",
+    "port":  55432,
+    "database":  "smartquery_db",
+    "alembic_version":  "feedf21773e1",
+    "dump_size_bytes":  75171,
+    "representative_reference":  "TKT-RESTORE01",
+    "stale_reference":  "TKT-STALE001",
+    "checks":  {
+                   "source_schema_sha256":  "ed7d1ab744886956c3e35ddde4674a05b01da26ef8313199b2c741e35917664b",
+                   "fresh_restore_schema_sha256":  "ed7d1ab744886956c3e35ddde4674a05b01da26ef8313199b2c741e35917664b",
+                   "schema_match_fresh":  true,
+                   "existing_restore_schema_sha256":  "ed7d1ab744886956c3e35ddde4674a05b01da26ef8313199b2c741e35917664b",
+                   "schema_match_existing_clean":  true,
+                   "source_record_sha256":  "00e07e9f6182a27c59db5e2b9b0d51055011c13029485c4647b9ba4cc994d419",
+                   "fresh_restore_record_sha256":  "00e07e9f6182a27c59db5e2b9b0d51055011c13029485c4647b9ba4cc994d419",
+                   "record_match_fresh":  true,
+                   "existing_restore_record_sha256":  "00e07e9f6182a27c59db5e2b9b0d51055011c13029485c4647b9ba4cc994d419",
+                   "record_match_existing_clean":  true,
+                   "stale_row_count_before_clean_restore":  1,
+                   "stale_row_count_after_clean_restore":  0
+               },
+    "production_touched":  false
+}

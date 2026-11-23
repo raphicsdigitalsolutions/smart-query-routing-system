@@ -6,7 +6,10 @@ import time
 from collections.abc import Callable
 
 from app.agents.state import AgentState, append_execution
-from app.agents.tools.knowledge_search import InMemoryKnowledgeRepository
+from app.agents.tools.knowledge_search import (
+    DatabaseKnowledgeRepository,
+    InMemoryKnowledgeRepository,
+)
 
 KnowledgeNode = Callable[[AgentState], AgentState]
 
@@ -15,11 +18,33 @@ def make_knowledge_node(repository: InMemoryKnowledgeRepository) -> KnowledgeNod
     def knowledge_node(state: AgentState) -> AgentState:
         started = time.perf_counter()
         entities = (state.get("classification") or {}).get("entities") or []
-        passages = repository.search(
-            state.get("query_text", ""),
-            entities=entities,
-            limit=3,
-        )
+        query_text = state.get("query_text", "")
+        if isinstance(repository, DatabaseKnowledgeRepository):
+            routed_dept = (state.get("department_recommendation") or {}).get("department_id")
+            target_dept_id = (
+                routed_dept
+                if isinstance(routed_dept, int)
+                else (
+                    state.get("department_id")
+                    if isinstance(state.get("department_id"), int)
+                    else None
+                )
+            )
+            if target_dept_id is not None:
+                scoped_repo = DatabaseKnowledgeRepository(
+                    repository.db, department_id=target_dept_id
+                )
+                passages = scoped_repo.search(query_text, entities=entities, limit=3)
+                if not passages:
+                    passages = repository.search(query_text, entities=entities, limit=3)
+            else:
+                passages = repository.search(query_text, entities=entities, limit=3)
+        else:
+            passages = repository.search(
+                query_text,
+                entities=entities,
+                limit=3,
+            )
         no_evidence = not passages
         return {
             **state,

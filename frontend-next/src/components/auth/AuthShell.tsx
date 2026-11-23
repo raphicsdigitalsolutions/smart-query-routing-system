@@ -85,7 +85,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
             </div>
 
             <div className="mt-6 text-center text-sm text-slate-600">{footer}</div>
-            <p className="mt-4 text-center text-xs text-slate-500">
+            <p className="mt-4 text-center text-xs text-slate-600">
               Protected by HttpOnly cookies and CSRF validation.
             </p>
           </div>

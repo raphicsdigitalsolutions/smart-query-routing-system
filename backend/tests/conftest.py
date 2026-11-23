@@ -8,8 +8,14 @@ import os
 from collections.abc import Iterator
 
 # Set before importing the app so settings are deterministic in tests.
+os.environ["DEBUG"] = "false"
 os.environ.setdefault("ENVIRONMENT", "testing")
 os.environ.setdefault("JWT_SECRET_KEY", "phase4-test-only-secret-not-for-production")
+# The test process can be suspended for hours (laptop sleep, CI queue) between
+# minting a token and using it. Production keeps the 60-minute default
+# (asserted in tests/test_token_expiry.py); the test environment opts into a
+# longer lifetime so wall-clock suspension cannot expire a freshly issued token.
+os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "1440")
 # Deterministic non-production encryption key for BYOK unit/integration tests.
 os.environ.setdefault(
     "BYOK_ENCRYPTION_KEY",

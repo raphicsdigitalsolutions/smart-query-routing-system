@@ -33,3 +33,7 @@
 docs/
 README.md
 *.pdf
+submission/
+**/.e2e/
+**/playwright-report/
+**/test-results/

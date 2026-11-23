@@ -1,0 +1,326 @@
+﻿alembic|feedf21773e1
+column|agent_runs|analysis_id|integer|YES|
+column|agent_runs|completion_tokens|integer|YES|
+column|agent_runs|created_at|timestamp with time zone|NO|now()
+column|agent_runs|duration_ms|integer|YES|
+column|agent_runs|id|integer|NO|nextval('agent_runs_id_seq'::regclass)
+column|agent_runs|model|character varying|YES|
+column|agent_runs|permission_outcome|character varying|NO|
+column|agent_runs|prompt_tokens|integer|YES|
+column|agent_runs|requested_by_id|integer|YES|
+column|agent_runs|status|character varying|NO|
+column|agent_runs|ticket_id|integer|NO|
+column|agent_runs|tool_io_json|json|YES|
+column|agent_runs|updated_at|timestamp with time zone|NO|now()
+column|agent_runs|workflow|character varying|NO|
+column|alembic_version|version_num|character varying|NO|
+column|announcements|audience_roles_json|json|NO|
+column|announcements|body|text|NO|
+column|announcements|created_at|timestamp with time zone|NO|now()
+column|announcements|created_by_id|integer|NO|
+column|announcements|department_id|integer|YES|
+column|announcements|id|integer|NO|nextval('announcements_id_seq'::regclass)
+column|announcements|is_active|boolean|NO|true
+column|announcements|published_at|timestamp with time zone|YES|
+column|announcements|title|character varying|NO|
+column|announcements|updated_at|timestamp with time zone|NO|now()
+column|audit_logs|action|character varying|NO|
+column|audit_logs|actor_id|integer|YES|
+column|audit_logs|actor_role|character varying|YES|
+column|audit_logs|created_at|timestamp with time zone|NO|now()
+column|audit_logs|details|json|YES|
+column|audit_logs|entity_id|character varying|NO|
+column|audit_logs|entity_type|character varying|NO|
+column|audit_logs|id|integer|NO|nextval('audit_logs_id_seq'::regclass)
+column|audit_logs|is_override|boolean|NO|false
+column|departments|created_at|timestamp with time zone|NO|now()
+column|departments|description|text|YES|
+column|departments|id|integer|NO|nextval('departments_id_seq'::regclass)
+column|departments|is_active|boolean|NO|true
+column|departments|name|character varying|NO|
+column|instructor_leaves|auto_reply|text|NO|
+column|instructor_leaves|created_at|timestamp with time zone|NO|now()
+column|instructor_leaves|created_by_id|integer|NO|
+column|instructor_leaves|end_at|timestamp with time zone|NO|
+column|instructor_leaves|id|integer|NO|nextval('instructor_leaves_id_seq'::regclass)
+column|instructor_leaves|is_active|boolean|NO|true
+column|instructor_leaves|reason|text|YES|
+column|instructor_leaves|start_at|timestamp with time zone|NO|
+column|instructor_leaves|updated_at|timestamp with time zone|NO|now()
+column|instructor_leaves|user_id|integer|NO|
+column|knowledge_documents|approved_at|timestamp with time zone|YES|
+column|knowledge_documents|approved_by_id|integer|YES|
+column|knowledge_documents|checksum|character varying|NO|
+column|knowledge_documents|content_text|text|NO|
+column|knowledge_documents|created_at|timestamp with time zone|NO|now()
+column|knowledge_documents|department_id|integer|YES|
+column|knowledge_documents|file_name|character varying|YES|
+column|knowledge_documents|id|integer|NO|nextval('knowledge_documents_id_seq'::regclass)
+column|knowledge_documents|is_active|boolean|NO|true
+column|knowledge_documents|is_approved|boolean|NO|false
+column|knowledge_documents|mime_type|character varying|YES|
+column|knowledge_documents|source_key|character varying|NO|
+column|knowledge_documents|source_type|character varying|NO|
+column|knowledge_documents|title|character varying|NO|
+column|knowledge_documents|updated_at|timestamp with time zone|NO|now()
+column|knowledge_documents|uploaded_by_id|integer|NO|
+column|knowledge_documents|version|integer|NO|
+column|message_attachments|checksum|character varying|NO|
+column|message_attachments|content_type|character varying|NO|
+column|message_attachments|created_at|timestamp with time zone|NO|now()
+column|message_attachments|file_name|character varying|NO|
+column|message_attachments|id|integer|NO|nextval('message_attachments_id_seq'::regclass)
+column|message_attachments|message_id|integer|NO|
+column|message_attachments|size_bytes|integer|NO|
+column|message_attachments|storage_path|character varying|NO|
+column|message_attachments|updated_at|timestamp with time zone|NO|now()
+column|messages|created_at|timestamp with time zone|NO|now()
+column|messages|id|integer|NO|nextval('messages_id_seq'::regclass)
+column|messages|is_internal|boolean|NO|false
+column|messages|message_body|text|NO|
+column|messages|sender_id|integer|NO|
+column|messages|ticket_id|integer|NO|
+column|notifications|attempts|integer|NO|
+column|notifications|body|text|NO|
+column|notifications|channel|character varying|NO|
+column|notifications|created_at|timestamp with time zone|NO|now()
+column|notifications|event_type|character varying|NO|
+column|notifications|id|integer|NO|nextval('notifications_id_seq'::regclass)
+column|notifications|is_internal|boolean|NO|false
+column|notifications|last_error|text|YES|
+column|notifications|provider_id|character varying|YES|
+column|notifications|read_at|timestamp with time zone|YES|
+column|notifications|recipient_address|character varying|YES|
+column|notifications|recipient_user_id|integer|YES|
+column|notifications|sent_at|timestamp with time zone|YES|
+column|notifications|status|character varying|NO|'pending'::character varying
+column|notifications|subject|character varying|YES|
+column|notifications|ticket_id|integer|YES|
+column|notifications|updated_at|timestamp with time zone|NO|now()
+column|ticket_ai_analyses|abstention_reason|text|YES|
+column|ticket_ai_analyses|approved_at|timestamp with time zone|YES|
+column|ticket_ai_analyses|approved_by_id|integer|YES|
+column|ticket_ai_analyses|approved_message_id|integer|YES|
+column|ticket_ai_analyses|classification_json|json|YES|
+column|ticket_ai_analyses|confidence|double precision|YES|
+column|ticket_ai_analyses|created_at|timestamp with time zone|NO|now()
+column|ticket_ai_analyses|department_recommendation_json|json|YES|
+column|ticket_ai_analyses|draft_json|json|YES|
+column|ticket_ai_analyses|error_code|character varying|YES|
+column|ticket_ai_analyses|error_message|text|YES|
+column|ticket_ai_analyses|execution_metadata_json|json|YES|
+column|ticket_ai_analyses|id|integer|NO|nextval('ticket_ai_analyses_id_seq'::regclass)
+column|ticket_ai_analyses|is_current|boolean|NO|true
+column|ticket_ai_analyses|knowledge_sources_json|json|YES|
+column|ticket_ai_analyses|no_evidence|boolean|NO|false
+column|ticket_ai_analyses|priority_recommendation|character varying|YES|
+column|ticket_ai_analyses|requested_by_id|integer|YES|
+column|ticket_ai_analyses|staff_recommendation_json|json|YES|
+column|ticket_ai_analyses|status|character varying|NO|'completed'::character varying
+column|ticket_ai_analyses|ticket_id|integer|NO|
+column|ticket_ai_analyses|updated_at|timestamp with time zone|NO|now()
+column|ticket_ai_analyses|validation_json|json|YES|
+column|ticket_ai_analyses|version|integer|NO|
+column|ticket_assignment_history|changed_by_id|integer|YES|
+column|ticket_assignment_history|created_at|timestamp with time zone|NO|now()
+column|ticket_assignment_history|from_assignee_id|integer|YES|
+column|ticket_assignment_history|id|integer|NO|nextval('ticket_assignment_history_id_seq'::regclass)
+column|ticket_assignment_history|ticket_id|integer|NO|
+column|ticket_assignment_history|to_assignee_id|integer|YES|
+column|ticket_status_history|changed_by_id|integer|YES|
+column|ticket_status_history|created_at|timestamp with time zone|NO|now()
+column|ticket_status_history|from_status|character varying|YES|
+column|ticket_status_history|id|integer|NO|nextval('ticket_status_history_id_seq'::regclass)
+column|ticket_status_history|note|character varying|YES|
+column|ticket_status_history|ticket_id|integer|NO|
+column|ticket_status_history|to_status|character varying|NO|
+column|tickets|assigned_to|integer|YES|
+column|tickets|auto_routed|boolean|NO|false
+column|tickets|category|character varying|YES|
+column|tickets|channel|character varying|NO|'web'::character varying
+column|tickets|created_at|timestamp with time zone|NO|now()
+column|tickets|department_id|integer|NO|
+column|tickets|description|text|NO|
+column|tickets|escalated_at|timestamp with time zone|YES|
+column|tickets|first_response_at|timestamp with time zone|YES|
+column|tickets|id|integer|NO|nextval('tickets_id_seq'::regclass)
+column|tickets|is_escalated|boolean|NO|false
+column|tickets|priority|character varying|NO|'normal'::character varying
+column|tickets|public_reference|character varying|NO|
+column|tickets|resolution_summary|text|YES|
+column|tickets|status|character varying|NO|'new'::character varying
+column|tickets|student_id|integer|NO|
+column|tickets|subject|character varying|NO|
+column|tickets|updated_at|timestamp with time zone|NO|now()
+column|user_api_keys|created_at|timestamp with time zone|NO|now()
+column|user_api_keys|encrypted_key|character varying|NO|
+column|user_api_keys|id|integer|NO|nextval('user_api_keys_id_seq'::regclass)
+column|user_api_keys|is_valid|boolean|NO|false
+column|user_api_keys|key_hint|character varying|NO|
+column|user_api_keys|last_used_at|timestamp with time zone|YES|
+column|user_api_keys|provider|character varying|NO|'openai'::character varying
+column|user_api_keys|updated_at|timestamp with time zone|NO|now()
+column|user_api_keys|user_id|integer|NO|
+column|user_api_keys|validated_at|timestamp with time zone|YES|
+column|user_oauth_accounts|created_at|timestamp with time zone|NO|now()
+column|user_oauth_accounts|id|integer|NO|nextval('user_oauth_accounts_id_seq'::regclass)
+column|user_oauth_accounts|linked_at|timestamp with time zone|NO|
+column|user_oauth_accounts|provider_email|character varying|YES|
+column|user_oauth_accounts|provider_subject|character varying|NO|
+column|user_oauth_accounts|provider|character varying|NO|'google'::character varying
+column|user_oauth_accounts|updated_at|timestamp with time zone|NO|now()
+column|user_oauth_accounts|user_id|integer|NO|
+column|users|created_at|timestamp with time zone|NO|now()
+column|users|department_id|integer|YES|
+column|users|email|character varying|NO|
+column|users|full_name|character varying|NO|
+column|users|id|integer|NO|nextval('users_id_seq'::regclass)
+column|users|is_active|boolean|NO|true
+column|users|password_hash|character varying|NO|
+column|users|role|character varying|NO|'student'::character varying
+column|users|updated_at|timestamp with time zone|NO|now()
+constraint|agent_runs|ck_agent_runs_agent_run_status_valid|CHECK_VALUES(completed,failed,abstained)
+constraint|agent_runs|fk_agent_runs_analysis_id_ticket_ai_analyses|FOREIGN KEY (analysis_id) REFERENCES ticket_ai_analyses(id) ON DELETE SET NULL
+constraint|agent_runs|fk_agent_runs_requested_by_id_users|FOREIGN KEY (requested_by_id) REFERENCES users(id) ON DELETE SET NULL
+constraint|agent_runs|fk_agent_runs_ticket_id_tickets|FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
+constraint|agent_runs|pk_agent_runs|PRIMARY KEY (id)
+constraint|alembic_version|alembic_version_pkc|PRIMARY KEY (version_num)
+constraint|announcements|fk_announcements_created_by_id_users|FOREIGN KEY (created_by_id) REFERENCES users(id) ON DELETE RESTRICT
+constraint|announcements|fk_announcements_department_id_departments|FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
+constraint|announcements|pk_announcements|PRIMARY KEY (id)
+constraint|audit_logs|fk_audit_logs_actor_id_users|FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE SET NULL
+constraint|audit_logs|pk_audit_logs|PRIMARY KEY (id)
+constraint|departments|pk_departments|PRIMARY KEY (id)
+constraint|instructor_leaves|ck_instructor_leaves_instructor_leave_window_valid|CHECK ((end_at > start_at))
+constraint|instructor_leaves|fk_instructor_leaves_created_by_id_users|FOREIGN KEY (created_by_id) REFERENCES users(id) ON DELETE RESTRICT
+constraint|instructor_leaves|fk_instructor_leaves_user_id_users|FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+constraint|instructor_leaves|pk_instructor_leaves|PRIMARY KEY (id)
+constraint|knowledge_documents|ck_knowledge_documents_knowledge_source_type_valid|CHECK_VALUES(text,txt,md,pdf)
+constraint|knowledge_documents|fk_knowledge_documents_approved_by_id_users|FOREIGN KEY (approved_by_id) REFERENCES users(id) ON DELETE SET NULL
+constraint|knowledge_documents|fk_knowledge_documents_department_id_departments|FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
+constraint|knowledge_documents|fk_knowledge_documents_uploaded_by_id_users|FOREIGN KEY (uploaded_by_id) REFERENCES users(id) ON DELETE RESTRICT
+constraint|knowledge_documents|pk_knowledge_documents|PRIMARY KEY (id)
+constraint|knowledge_documents|uq_knowledge_documents_source_version|UNIQUE (source_key, version)
+constraint|message_attachments|fk_message_attachments_message_id_messages|FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE
+constraint|message_attachments|pk_message_attachments|PRIMARY KEY (id)
+constraint|messages|fk_messages_sender_id_users|FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE RESTRICT
+constraint|messages|fk_messages_ticket_id_tickets|FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
+constraint|messages|pk_messages|PRIMARY KEY (id)
+constraint|notifications|ck_notifications_notification_channel_valid|CHECK_VALUES(in_app,email,whatsapp)
+constraint|notifications|ck_notifications_notification_status_valid|CHECK_VALUES(pending,sent,failed)
+constraint|notifications|fk_notifications_recipient_user_id_users|FOREIGN KEY (recipient_user_id) REFERENCES users(id) ON DELETE CASCADE
+constraint|notifications|fk_notifications_ticket_id_tickets|FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
+constraint|notifications|pk_notifications|PRIMARY KEY (id)
+constraint|ticket_ai_analyses|ck_ticket_ai_analyses_ai_status_valid|CHECK_VALUES(completed,failed)
+constraint|ticket_ai_analyses|fk_ticket_ai_analyses_approved_by_id_users|FOREIGN KEY (approved_by_id) REFERENCES users(id) ON DELETE SET NULL
+constraint|ticket_ai_analyses|fk_ticket_ai_analyses_approved_message_id_messages|FOREIGN KEY (approved_message_id) REFERENCES messages(id) ON DELETE SET NULL
+constraint|ticket_ai_analyses|fk_ticket_ai_analyses_requested_by_id_users|FOREIGN KEY (requested_by_id) REFERENCES users(id) ON DELETE SET NULL
+constraint|ticket_ai_analyses|fk_ticket_ai_analyses_ticket_id_tickets|FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
+constraint|ticket_ai_analyses|pk_ticket_ai_analyses|PRIMARY KEY (id)
+constraint|ticket_ai_analyses|uq_ticket_ai_analyses_ticket_id_version|UNIQUE (ticket_id, version)
+constraint|ticket_assignment_history|fk_ticket_assignment_history_changed_by_id_users|FOREIGN KEY (changed_by_id) REFERENCES users(id) ON DELETE SET NULL
+constraint|ticket_assignment_history|fk_ticket_assignment_history_from_assignee_id_users|FOREIGN KEY (from_assignee_id) REFERENCES users(id) ON DELETE SET NULL
+constraint|ticket_assignment_history|fk_ticket_assignment_history_ticket_id_tickets|FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
+constraint|ticket_assignment_history|fk_ticket_assignment_history_to_assignee_id_users|FOREIGN KEY (to_assignee_id) REFERENCES users(id) ON DELETE SET NULL
+constraint|ticket_assignment_history|pk_ticket_assignment_history|PRIMARY KEY (id)
+constraint|ticket_status_history|fk_ticket_status_history_changed_by_id_users|FOREIGN KEY (changed_by_id) REFERENCES users(id) ON DELETE SET NULL
+constraint|ticket_status_history|fk_ticket_status_history_ticket_id_tickets|FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
+constraint|ticket_status_history|pk_ticket_status_history|PRIMARY KEY (id)
+constraint|tickets|ck_tickets_channel_valid|CHECK_VALUES(web,email,whatsapp)
+constraint|tickets|ck_tickets_priority_valid|CHECK_VALUES(low,normal,high,urgent)
+constraint|tickets|ck_tickets_status_valid|CHECK_VALUES(new,assigned,in_progress,waiting_for_student,resolved,closed)
+constraint|tickets|fk_tickets_assigned_to_users|FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL
+constraint|tickets|fk_tickets_department_id_departments|FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE RESTRICT
+constraint|tickets|fk_tickets_student_id_users|FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE RESTRICT
+constraint|tickets|pk_tickets|PRIMARY KEY (id)
+constraint|user_api_keys|fk_user_api_keys_user_id_users|FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+constraint|user_api_keys|pk_user_api_keys|PRIMARY KEY (id)
+constraint|user_api_keys|uq_user_api_keys_user_provider|UNIQUE (user_id, provider)
+constraint|user_oauth_accounts|fk_user_oauth_accounts_user_id_users|FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+constraint|user_oauth_accounts|pk_user_oauth_accounts|PRIMARY KEY (id)
+constraint|user_oauth_accounts|uq_user_oauth_provider_subject|UNIQUE (provider, provider_subject)
+constraint|users|ck_users_role_valid|CHECK_VALUES(student,staff,hod,admin)
+constraint|users|fk_users_department_id_departments|FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
+constraint|users|pk_users|PRIMARY KEY (id)
+index|agent_runs|ix_agent_runs_ticket_created|CREATE INDEX ix_agent_runs_ticket_created ON public.agent_runs USING btree (ticket_id, created_at)
+index|agent_runs|pk_agent_runs|CREATE UNIQUE INDEX pk_agent_runs ON public.agent_runs USING btree (id)
+index|alembic_version|alembic_version_pkc|CREATE UNIQUE INDEX alembic_version_pkc ON public.alembic_version USING btree (version_num)
+index|announcements|ix_announcements_department_id|CREATE INDEX ix_announcements_department_id ON public.announcements USING btree (department_id)
+index|announcements|ix_announcements_published|CREATE INDEX ix_announcements_published ON public.announcements USING btree (is_active, published_at)
+index|announcements|pk_announcements|CREATE UNIQUE INDEX pk_announcements ON public.announcements USING btree (id)
+index|audit_logs|ix_audit_logs_action|CREATE INDEX ix_audit_logs_action ON public.audit_logs USING btree (action)
+index|audit_logs|ix_audit_logs_actor_id|CREATE INDEX ix_audit_logs_actor_id ON public.audit_logs USING btree (actor_id)
+index|audit_logs|ix_audit_logs_created|CREATE INDEX ix_audit_logs_created ON public.audit_logs USING btree (created_at)
+index|audit_logs|ix_audit_logs_entity|CREATE INDEX ix_audit_logs_entity ON public.audit_logs USING btree (entity_type, entity_id)
+index|audit_logs|pk_audit_logs|CREATE UNIQUE INDEX pk_audit_logs ON public.audit_logs USING btree (id)
+index|departments|ix_departments_name|CREATE UNIQUE INDEX ix_departments_name ON public.departments USING btree (name)
+index|departments|pk_departments|CREATE UNIQUE INDEX pk_departments ON public.departments USING btree (id)
+index|instructor_leaves|ix_instructor_leaves_user_active|CREATE INDEX ix_instructor_leaves_user_active ON public.instructor_leaves USING btree (user_id, is_active)
+index|instructor_leaves|ix_instructor_leaves_user_id|CREATE INDEX ix_instructor_leaves_user_id ON public.instructor_leaves USING btree (user_id)
+index|instructor_leaves|pk_instructor_leaves|CREATE UNIQUE INDEX pk_instructor_leaves ON public.instructor_leaves USING btree (id)
+index|knowledge_documents|ix_knowledge_documents_approval|CREATE INDEX ix_knowledge_documents_approval ON public.knowledge_documents USING btree (is_approved, is_active)
+index|knowledge_documents|ix_knowledge_documents_department|CREATE INDEX ix_knowledge_documents_department ON public.knowledge_documents USING btree (department_id)
+index|knowledge_documents|ix_knowledge_documents_source_key|CREATE INDEX ix_knowledge_documents_source_key ON public.knowledge_documents USING btree (source_key)
+index|knowledge_documents|ix_knowledge_documents_uploaded_by_id|CREATE INDEX ix_knowledge_documents_uploaded_by_id ON public.knowledge_documents USING btree (uploaded_by_id)
+index|knowledge_documents|pk_knowledge_documents|CREATE UNIQUE INDEX pk_knowledge_documents ON public.knowledge_documents USING btree (id)
+index|knowledge_documents|uq_knowledge_documents_source_version|CREATE UNIQUE INDEX uq_knowledge_documents_source_version ON public.knowledge_documents USING btree (source_key, version)
+index|message_attachments|ix_message_attachments_message|CREATE INDEX ix_message_attachments_message ON public.message_attachments USING btree (message_id)
+index|message_attachments|pk_message_attachments|CREATE UNIQUE INDEX pk_message_attachments ON public.message_attachments USING btree (id)
+index|messages|ix_messages_sender_id|CREATE INDEX ix_messages_sender_id ON public.messages USING btree (sender_id)
+index|messages|ix_messages_ticket_id|CREATE INDEX ix_messages_ticket_id ON public.messages USING btree (ticket_id)
+index|messages|pk_messages|CREATE UNIQUE INDEX pk_messages ON public.messages USING btree (id)
+index|notifications|ix_notifications_recipient_created|CREATE INDEX ix_notifications_recipient_created ON public.notifications USING btree (recipient_user_id, created_at)
+index|notifications|ix_notifications_recipient_user_id|CREATE INDEX ix_notifications_recipient_user_id ON public.notifications USING btree (recipient_user_id)
+index|notifications|ix_notifications_ticket_event|CREATE INDEX ix_notifications_ticket_event ON public.notifications USING btree (ticket_id, event_type)
+index|notifications|pk_notifications|CREATE UNIQUE INDEX pk_notifications ON public.notifications USING btree (id)
+index|ticket_ai_analyses|ix_ticket_ai_analyses_created_at|CREATE INDEX ix_ticket_ai_analyses_created_at ON public.ticket_ai_analyses USING btree (created_at)
+index|ticket_ai_analyses|ix_ticket_ai_analyses_requested_by_id|CREATE INDEX ix_ticket_ai_analyses_requested_by_id ON public.ticket_ai_analyses USING btree (requested_by_id)
+index|ticket_ai_analyses|ix_ticket_ai_analyses_ticket_current|CREATE INDEX ix_ticket_ai_analyses_ticket_current ON public.ticket_ai_analyses USING btree (ticket_id, is_current)
+index|ticket_ai_analyses|ix_ticket_ai_analyses_ticket_id|CREATE INDEX ix_ticket_ai_analyses_ticket_id ON public.ticket_ai_analyses USING btree (ticket_id)
+index|ticket_ai_analyses|pk_ticket_ai_analyses|CREATE UNIQUE INDEX pk_ticket_ai_analyses ON public.ticket_ai_analyses USING btree (id)
+index|ticket_ai_analyses|uq_ticket_ai_analyses_ticket_id_version|CREATE UNIQUE INDEX uq_ticket_ai_analyses_ticket_id_version ON public.ticket_ai_analyses USING btree (ticket_id, version)
+index|ticket_assignment_history|ix_ticket_assignment_history_changed_by_id|CREATE INDEX ix_ticket_assignment_history_changed_by_id ON public.ticket_assignment_history USING btree (changed_by_id)
+index|ticket_assignment_history|ix_ticket_assignment_history_created_at|CREATE INDEX ix_ticket_assignment_history_created_at ON public.ticket_assignment_history USING btree (created_at)
+index|ticket_assignment_history|ix_ticket_assignment_history_ticket_id|CREATE INDEX ix_ticket_assignment_history_ticket_id ON public.ticket_assignment_history USING btree (ticket_id)
+index|ticket_assignment_history|pk_ticket_assignment_history|CREATE UNIQUE INDEX pk_ticket_assignment_history ON public.ticket_assignment_history USING btree (id)
+index|ticket_status_history|ix_ticket_status_history_changed_by_id|CREATE INDEX ix_ticket_status_history_changed_by_id ON public.ticket_status_history USING btree (changed_by_id)
+index|ticket_status_history|ix_ticket_status_history_created_at|CREATE INDEX ix_ticket_status_history_created_at ON public.ticket_status_history USING btree (created_at)
+index|ticket_status_history|ix_ticket_status_history_ticket_id|CREATE INDEX ix_ticket_status_history_ticket_id ON public.ticket_status_history USING btree (ticket_id)
+index|ticket_status_history|pk_ticket_status_history|CREATE UNIQUE INDEX pk_ticket_status_history ON public.ticket_status_history USING btree (id)
+index|tickets|ix_tickets_assigned_to|CREATE INDEX ix_tickets_assigned_to ON public.tickets USING btree (assigned_to)
+index|tickets|ix_tickets_channel_created|CREATE INDEX ix_tickets_channel_created ON public.tickets USING btree (channel, created_at)
+index|tickets|ix_tickets_department_id|CREATE INDEX ix_tickets_department_id ON public.tickets USING btree (department_id)
+index|tickets|ix_tickets_department_status|CREATE INDEX ix_tickets_department_status ON public.tickets USING btree (department_id, status)
+index|tickets|ix_tickets_escalated_status|CREATE INDEX ix_tickets_escalated_status ON public.tickets USING btree (is_escalated, status)
+index|tickets|ix_tickets_public_reference|CREATE UNIQUE INDEX ix_tickets_public_reference ON public.tickets USING btree (public_reference)
+index|tickets|ix_tickets_student_created|CREATE INDEX ix_tickets_student_created ON public.tickets USING btree (student_id, created_at)
+index|tickets|ix_tickets_student_id|CREATE INDEX ix_tickets_student_id ON public.tickets USING btree (student_id)
+index|tickets|pk_tickets|CREATE UNIQUE INDEX pk_tickets ON public.tickets USING btree (id)
+index|user_api_keys|ix_user_api_keys_user_id|CREATE INDEX ix_user_api_keys_user_id ON public.user_api_keys USING btree (user_id)
+index|user_api_keys|ix_user_api_keys_user_provider|CREATE UNIQUE INDEX ix_user_api_keys_user_provider ON public.user_api_keys USING btree (user_id, provider)
+index|user_api_keys|pk_user_api_keys|CREATE UNIQUE INDEX pk_user_api_keys ON public.user_api_keys USING btree (id)
+index|user_api_keys|uq_user_api_keys_user_provider|CREATE UNIQUE INDEX uq_user_api_keys_user_provider ON public.user_api_keys USING btree (user_id, provider)
+index|user_oauth_accounts|ix_user_oauth_accounts_user|CREATE INDEX ix_user_oauth_accounts_user ON public.user_oauth_accounts USING btree (user_id)
+index|user_oauth_accounts|pk_user_oauth_accounts|CREATE UNIQUE INDEX pk_user_oauth_accounts ON public.user_oauth_accounts USING btree (id)
+index|user_oauth_accounts|uq_user_oauth_provider_subject|CREATE UNIQUE INDEX uq_user_oauth_provider_subject ON public.user_oauth_accounts USING btree (provider, provider_subject)
+index|users|ix_users_department_id|CREATE INDEX ix_users_department_id ON public.users USING btree (department_id)
+index|users|ix_users_email|CREATE UNIQUE INDEX ix_users_email ON public.users USING btree (email)
+index|users|ix_users_role|CREATE INDEX ix_users_role ON public.users USING btree (role)
+index|users|pk_users|CREATE UNIQUE INDEX pk_users ON public.users USING btree (id)
+table|agent_runs
+table|alembic_version
+table|announcements
+table|audit_logs
+table|departments
+table|instructor_leaves
+table|knowledge_documents
+table|message_attachments
+table|messages
+table|notifications
+table|ticket_ai_analyses
+table|ticket_assignment_history
+table|ticket_status_history
+table|tickets
+table|user_api_keys
+table|user_oauth_accounts
+table|users

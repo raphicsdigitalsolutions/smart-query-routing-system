@@ -13,6 +13,7 @@ from app.core.security import create_access_token, hash_password, verify_passwor
 from app.db.dependencies import get_db
 from app.models import User
 from app.schemas.auth import LoginRequest, LoginResponse, RegisterRequest, UserResponse
+from app.services.audit import record_audit
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -33,6 +34,16 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> User:
     )
     db.add(user)
     try:
+        db.flush()
+        record_audit(
+            db,
+            actor=user,
+            action="auth.registered",
+            entity_type="user",
+            entity_id=user.id,
+            details={"email": user.email},
+            is_override=False,
+        )
         db.commit()
     except IntegrityError as exc:
         db.rollback()
@@ -47,7 +58,34 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse
     user = db.scalar(select(User).where(User.email == payload.email))
     if user is None or not verify_password(payload.password, user.password_hash) or not user.is_active:
         # One generic message for all failures: do not disclose which field was wrong.
+        reason = "user_not_found"
+        if user is not None and not user.is_active:
+            reason = "inactive_account"
+        elif user is not None:
+            reason = "invalid_credentials"
+        record_audit(
+            db,
+            actor=user,
+            actor_role=user.role if user is not None else None,
+            action="auth.login_failed",
+            entity_type="user",
+            entity_id=user.id if user is not None else payload.email,
+            details={"email": payload.email, "reason": reason},
+            is_override=False,
+        )
+        db.commit()
         raise AppError("Invalid email or password", 401, code="invalid_credentials")
+
+    record_audit(
+        db,
+        actor=user,
+        action="auth.login_succeeded",
+        entity_type="user",
+        entity_id=user.id,
+        details={"email": user.email},
+        is_override=False,
+    )
+    db.commit()
 
     token, expires_in = create_access_token(user.id, user.role)
     return LoginResponse(

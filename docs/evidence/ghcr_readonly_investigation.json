@@ -1,0 +1,50 @@
+{
+  "checked_at_utc": "2026-11-23T10:55:52.1423119Z",
+  "target": "ghcr.io/raphicsdigitalsolutions/smart-query-system:latest",
+  "method": "Read-only GHCR Distribution API with anonymous bearer token; read-only `docker buildx imagetools inspect`; local `docker images --digests`",
+  "commands_or_requests": [
+    "Invoke-WebRequest https://ghcr.io/v2/ (401 challenge, expected)",
+    "Invoke-WebRequest https://ghcr.io/token?service=ghcr.io&scope=repository:raphicsdigitalsolutions/smart-query-system:pull",
+    "Invoke-WebRequest https://ghcr.io/v2/raphicsdigitalsolutions/smart-query-system/manifests/latest with Accept=OCI/Docker manifest media types and anonymous bearer token",
+    "docker buildx imagetools inspect ghcr.io/raphicsdigitalsolutions/smart-query-system:latest",
+    "docker images --digests --format '{{.Digest}}' ghcr.io/raphicsdigitalsolutions/smart-query-system:latest"
+  ],
+  "registry_writes_performed": false,
+  "push_attempted": false,
+  "credential_or_token_value_recorded": false,
+  "anonymous_challenge_status": 401,
+  "anonymous_token_status": 200,
+  "anonymous_token_present": true,
+  "manifest_status": 200,
+  "manifest_content_type": "application/vnd.oci.image.index.v1+json",
+  "manifest_digest_header": "sha256:417e017081a460adfe310236e13b3e117cb972c11c5c93370968aa866a2b0f0f",
+  "buildx_digest": "sha256:417e017081a460adfe310236e13b3e117cb972c11c5c93370968aa866a2b0f0f",
+  "manifest_media_type": "application/vnd.oci.image.index.v1+json",
+  "manifest_child_count": 2,
+  "children": [
+    {
+      "Digest": "sha256:fdf9963a227a96e3880c08d5c8007cd75abed76368dd9ba4a7dca912ce648406",
+      "PlatformArchitecture": "amd64",
+      "PlatformOS": "linux",
+      "ManifestStatus": 200,
+      "ConfigBlobStatus": 200,
+      "FirstLayerBlobStatus": 200
+    },
+    {
+      "Digest": "sha256:f10db1788c7b4e794cf771b24d7eec0bc5102b7dbaf47bbcf07c955a8da1fdba",
+      "PlatformArchitecture": "unknown",
+      "PlatformOS": "unknown",
+      "AnnotationType": "attestation-manifest",
+      "ManifestStatus": 200,
+      "ConfigBlobStatus": 200,
+      "FirstLayerBlobStatus": 200
+    }
+  ],
+  "local_image_digest": "sha256:417e017081a460adfe310236e13b3e117cb972c11c5c93370968aa866a2b0f0f",
+  "recorded_digest": "sha256:417e017081a460adfe310236e13b3e117cb972c11c5c93370968aa866a2b0f0f",
+  "digest_matches_recorded": true,
+  "local_digest_matches_remote": true,
+  "anonymous_pull_capable": true,
+  "conclusion": "Package exists, is anonymously pullable, and the remote digest matches the recorded digest. Publication of new local content remains blocked by missing write:packages and was not attempted.",
+  "scope_note": "This read-only check does not prove that later local working-tree changes are published, nor that separate smart-query-backend / smart-query-frontend packages exist. It resolves the earlier 'image URL unavailable' contradiction for this package only."
+}

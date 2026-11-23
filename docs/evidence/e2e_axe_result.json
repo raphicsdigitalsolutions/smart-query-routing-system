@@ -1,0 +1,16 @@
+{
+  "command": "npm run test:e2e",
+  "working_directory": "frontend-next",
+  "pretest": "next build passed",
+  "passed": 11,
+  "failed": 0,
+  "duration_human": "1.3m",
+  "coverage": [
+    "authentication/login flows",
+    "student ticket creation",
+    "ticket status polling",
+    "role isolation and unauthorized access",
+    "axe scans on login, student workspace and ticket detail"
+  ],
+  "accessibility_result": "No serious or critical axe violations on the scanned pages."
+}

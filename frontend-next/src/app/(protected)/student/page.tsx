@@ -53,7 +53,7 @@ function StudentWorkspace() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 className="text-sm font-semibold text-navy-900">Submitted tickets</h3>
-            <p className="text-xs text-slate-500">Only your own queries are listed.</p>
+            <p className="text-xs text-slate-600">Only your own queries are listed.</p>
           </div>
           <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">{total} total</span>
         </div>

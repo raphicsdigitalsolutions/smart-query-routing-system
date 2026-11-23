@@ -1,0 +1,58 @@
+﻿next@15.5.29
+node_modules/next
+  next@"15.5.29" from the root project
+  peer next@"^13.0.0 || ^14.0.0 || ^15.0.0 || ^16.0.0" from @mui/material-nextjs@7.3.10
+  node_modules/@mui/material-nextjs
+    @mui/material-nextjs@"^7.3.10" from the root project
+
+postcss@8.5.33 dev
+node_modules/postcss
+  postcss@"^8.5.25" from @tailwindcss/postcss@4.3.5
+  node_modules/@tailwindcss/postcss
+    dev @tailwindcss/postcss@"^4.3.5" from the root project
+  postcss@"^8.5.6" from vite@7.3.8
+  node_modules/vite-node/node_modules/vite
+    vite@"^5.0.0 || ^6.0.0 || ^7.0.0-0" from vite-node@3.2.4
+    node_modules/vite-node
+      vite-node@"3.2.4" from vitest@3.2.4 dev
+      node_modules/vitest
+        dev vitest@"^3.2.4" from the root project
+  postcss@"^8.5.6" from vite@7.3.8
+  node_modules/vitest/node_modules/vite
+    vite@"^5.0.0 || ^6.0.0 || ^7.0.0-0" from vitest@3.2.4 dev
+    node_modules/vitest
+      dev vitest@"^3.2.4" from the root project
+    peerOptional vite@"^5.0.0 || ^6.0.0 || ^7.0.0-0" from @vitest/mocker@3.2.4 dev
+    node_modules/vitest/node_modules/@vitest/mocker
+      @vitest/mocker@"3.2.4" from vitest@3.2.4 dev
+      node_modules/vitest
+        dev vitest@"^3.2.4" from the root project
+
+postcss@8.4.31
+node_modules/next/node_modules/postcss
+  postcss@"8.4.31" from next@15.5.29
+  node_modules/next
+    next@"15.5.29" from the root project
+    peer next@"^13.0.0 || ^14.0.0 || ^15.0.0 || ^16.0.0" from @mui/material-nextjs@7.3.10
+    node_modules/@mui/material-nextjs
+      @mui/material-nextjs@"^7.3.10" from the root project
+
+vitest@3.2.4 dev
+node_modules/vitest
+  dev vitest@"^3.2.4" from the root project
+
+@vitest/mocker@3.2.4 dev
+node_modules/vitest/node_modules/@vitest/mocker
+  @vitest/mocker@"3.2.4" from vitest@3.2.4 dev
+  node_modules/vitest
+    dev vitest@"^3.2.4" from the root project
+
+tinypool@1.1.1 dev
+node_modules/tinypool
+  tinypool@"^1.1.1" from vitest@3.2.4 dev
+  node_modules/vitest
+    dev vitest@"^3.2.4" from the root project
+
+zod@3.25.76
+node_modules/zod
+  zod@"^3.24.2" from the root project

@@ -1,0 +1,11 @@
+{
+  "command": ".\\.venv\\Scripts\\python.exe -m pytest -q",
+  "working_directory": "backend",
+  "passed": 225,
+  "failed": 0,
+  "errors": 0,
+  "warnings": 17,
+  "duration_seconds": 265.61,
+  "duration_human": "0:04:25",
+  "warning_summary": "Pre-existing LangSmith DeprecationWarning: asyncio.iscoroutinefunction is deprecated and slated for removal in Python 3.16."
+}

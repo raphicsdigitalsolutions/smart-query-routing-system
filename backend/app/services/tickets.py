@@ -1,6 +1,8 @@
 """Ticket business logic, authorization and transactional workflow."""
 
+import hashlib
 import secrets
+from types import SimpleNamespace
 from typing import Any
 
 from sqlalchemy import func, or_, select
@@ -15,6 +17,7 @@ from app.core.enums import (
 )
 from app.core.errors import AppError, NotFoundError
 from app.models import (
+    AuditLog,
     Department,
     Message,
     Ticket,
@@ -30,6 +33,7 @@ from app.schemas.ticket import (
     DepartmentListResponse,
     DepartmentResponse,
     DepartmentUpdate,
+    EscalationHistoryResponse,
     MessageCreate,
     MessageListResponse,
     MessageResponse,
@@ -39,16 +43,20 @@ from app.schemas.ticket import (
     TicketHistoryResponse,
     TicketListResponse,
     TicketResponse,
+    TicketStatusSnapshot,
     TicketUpdate,
 )
 from app.services.audit import record_audit
 from app.services.auto_routing import resolve_department
+from app.services.instructor_routing import resolve_instructor
 from app.services.notifications import (
     AUTO_REPLY,
     PUBLIC_REPLY,
     TICKET_ASSIGNED,
     TICKET_CLOSED,
     TICKET_CREATED,
+    TICKET_DEESCALATED,
+    TICKET_MANUAL_ESCALATED,
     TICKET_RESOLVED,
     notify_ticket_event,
     utc_now,
@@ -61,6 +69,8 @@ except ImportError:  # pragma: no cover - depends on deployment composition
 
 ASSIGNABLE_ROLES = {"staff", "hod", "admin"}
 ADMIN_FIELDS = {"department_id"}
+_SYSTEM_ACTOR = SimpleNamespace(id=None, role="system")
+_AUTO_ASSIGNMENT_NOTE = "Automatically routed to an available instructor"
 
 
 def _public_reference() -> str:
@@ -234,6 +244,70 @@ def create_ticket(db: Session, payload: TicketCreate, student: User) -> TicketRe
             is_override=False,
         )
 
+    auto_assignee: User | None = None
+    if should_route:
+        routing_decision = resolve_instructor(db, department_id=department.id)
+        auto_assignee = routing_decision.instructor
+        if auto_assignee is not None:
+            ticket.assigned_to = auto_assignee.id
+            ticket.status = TicketStatus.ASSIGNED.value
+            db.add(
+                TicketAssignmentHistory(
+                    ticket_id=ticket.id,
+                    from_assignee_id=None,
+                    to_assignee_id=auto_assignee.id,
+                    changed_by_id=None,
+                )
+            )
+            db.add(
+                TicketStatusHistory(
+                    ticket_id=ticket.id,
+                    from_status=TicketStatus.NEW.value,
+                    to_status=TicketStatus.ASSIGNED.value,
+                    changed_by_id=None,
+                    note=_AUTO_ASSIGNMENT_NOTE,
+                )
+            )
+            record_audit(
+                db,
+                actor=_SYSTEM_ACTOR,  # type: ignore[arg-type]
+                action="ticket.instructor_auto_assigned",
+                entity_type="ticket",
+                entity_id=ticket.id,
+                details={
+                    "public_reference": ticket.public_reference,
+                    "department_id": department.id,
+                    "assignee_id": auto_assignee.id,
+                    "reason": routing_decision.reason,
+                    "active_load": routing_decision.active_load,
+                },
+                is_override=False,
+            )
+            notify_ticket_event(
+                db,
+                ticket=ticket,
+                event_type=TICKET_ASSIGNED,
+                recipients=[auto_assignee],
+                subject=f"Ticket assigned {ticket.public_reference}",
+            )
+        else:
+            record_audit(
+                db,
+                actor=_SYSTEM_ACTOR,  # type: ignore[arg-type]
+                action="ticket.instructor_routing_skipped",
+                entity_type="ticket",
+                entity_id=ticket.id,
+                details={
+                    "public_reference": ticket.public_reference,
+                    "department_id": department.id,
+                    "reason": routing_decision.reason,
+                    "eligible_count": routing_decision.eligible_count,
+                    "excluded_on_leave_count": routing_decision.excluded_on_leave_count,
+                    "excluded_inactive_count": routing_decision.excluded_inactive_count,
+                },
+                is_override=False,
+            )
+
     department_staff = db.scalars(
         select(User).where(
             User.is_active.is_(True),
@@ -244,6 +318,9 @@ def create_ticket(db: Session, payload: TicketCreate, student: User) -> TicketRe
             or_(User.department_id == department.id, User.role == "admin"),
         )
     ).all()
+    if auto_assignee is not None:
+        # The selected instructor receives TICKET_ASSIGNED instead, exactly once.
+        department_staff = [user for user in department_staff if user.id != auto_assignee.id]
     notify_ticket_event(
         db,
         ticket=ticket,
@@ -316,6 +393,124 @@ def get_ticket_detail(db: Session, ticket_id: int, user: User) -> TicketResponse
     return _ticket_response(get_accessible_ticket(db, ticket_id, user))
 
 
+def get_ticket_status_snapshot(
+    db: Session, ticket_id: int, user: User
+) -> tuple[TicketStatusSnapshot, str]:
+    """Return a small authorized snapshot plus a stable polling ETag.
+
+    The ETag includes every field that affects student-visible status so a
+    conditional GET can return 304 without missing assignment or escalation.
+    """
+    ticket = get_accessible_ticket(db, ticket_id, user)
+    snapshot = TicketStatusSnapshot.model_validate(ticket)
+    fingerprint = "|".join(
+        [
+            str(ticket.id),
+            ticket.status,
+            str(ticket.assigned_to),
+            str(ticket.is_escalated),
+            ticket.updated_at.isoformat(),
+        ]
+    )
+    etag = f'"tkt-{hashlib.sha256(fingerprint.encode()).hexdigest()[:24]}"'
+    return snapshot, etag
+
+
+def escalation_recipients(
+    db: Session,
+    ticket: Ticket,
+    *,
+    include_student: bool = False,
+) -> list[User]:
+    """Select active, ticket-authorized recipients for escalation/de-escalation events.
+
+    Includes the assigned staff member (when set), active HODs of the ticket's
+    department, and active admins (plus the ticket's student when requested).
+    Every candidate is verified against ``can_view`` so unauthorized users or
+    other-department staff/HODs never receive escalation notifications.
+    """
+    candidates: list[User] = []
+    if include_student:
+        student = db.get(User, ticket.student_id)
+        if student is not None:
+            candidates.append(student)
+    if ticket.assigned_to is not None:
+        assignee = db.get(User, ticket.assigned_to)
+        if assignee is not None:
+            candidates.append(assignee)
+    candidates.extend(
+        db.scalars(
+            select(User).where(
+                User.is_active.is_(True),
+                User.role == "hod",
+                User.department_id == ticket.department_id,
+            )
+        ).all()
+    )
+    candidates.extend(
+        db.scalars(
+            select(User).where(User.is_active.is_(True), User.role == "admin")
+        ).all()
+    )
+    return [user for user in candidates if user.is_active and can_view(ticket, user)]
+
+
+def _escalation_history_from_audit(
+    log: AuditLog, user_names: dict[int, str]
+) -> EscalationHistoryResponse:
+    details = log.details if isinstance(log.details, dict) else {}
+    default_to = log.action != "ticket.deescalated"
+    from_val = details.get("previous_is_escalated")
+    to_val = details.get("new_is_escalated")
+    from_escalated = bool(from_val) if isinstance(from_val, bool) else (not default_to)
+    to_escalated = bool(to_val) if isinstance(to_val, bool) else default_to
+
+    if log.action == "ticket.escalated_automatically":
+        short_action = "escalated_automatically"
+        mode = str(details.get("mode") or "automatic")
+    elif log.action == "ticket.deescalated":
+        short_action = "deescalated"
+        mode = str(details.get("mode") or "manual")
+    else:
+        short_action = "escalated"
+        mode = str(details.get("mode") or "manual")
+
+    actor_name = (
+        user_names.get(log.actor_id)
+        if log.actor_id is not None
+        else None
+    ) or (str(details.get("actor_name")) if details.get("actor_name") else None)
+    if actor_name is None and mode == "automatic":
+        actor_name = "System (SLA)"
+
+    note = details.get("note")
+    if not note:
+        if short_action == "escalated_automatically":
+            sla_hours = details.get("sla_hours")
+            note = (
+                f"Automatically escalated after {sla_hours}h SLA"
+                if sla_hours is not None
+                else "Automatically escalated"
+            )
+        elif short_action == "deescalated":
+            note = "Escalation removed"
+        else:
+            note = "Manually escalated"
+
+    return EscalationHistoryResponse(
+        id=log.id,
+        action=short_action,
+        from_escalated=from_escalated,
+        to_escalated=to_escalated,
+        actor_id=log.actor_id,
+        actor_name=actor_name,
+        actor_role=log.actor_role,
+        mode=mode,
+        note=str(note),
+        created_at=log.created_at,
+    )
+
+
 def get_ticket_history(db: Session, ticket_id: int, user: User) -> TicketHistoryResponse:
     ticket = get_accessible_ticket(db, ticket_id, user)
     statuses = db.scalars(
@@ -328,9 +523,72 @@ def get_ticket_history(db: Session, ticket_id: int, user: User) -> TicketHistory
         .where(TicketAssignmentHistory.ticket_id == ticket.id)
         .order_by(TicketAssignmentHistory.created_at, TicketAssignmentHistory.id)
     ).all()
+    escalation_logs = db.scalars(
+        select(AuditLog)
+        .where(
+            AuditLog.entity_type == "ticket",
+            AuditLog.entity_id == str(ticket.id),
+            AuditLog.action.in_(
+                ("ticket.escalated", "ticket.escalated_automatically", "ticket.deescalated")
+            ),
+        )
+        .order_by(AuditLog.created_at, AuditLog.id)
+    ).all()
+
+    user_ids: set[int] = set()
+    for row in statuses:
+        if row.changed_by_id is not None:
+            user_ids.add(row.changed_by_id)
+    for row in assignments:
+        for uid in (row.from_assignee_id, row.to_assignee_id, row.changed_by_id):
+            if uid is not None:
+                user_ids.add(uid)
+    for log in escalation_logs:
+        if log.actor_id is not None:
+            user_ids.add(log.actor_id)
+
+    user_names: dict[int, str] = {}
+    if user_ids:
+        user_names = {
+            uid: full_name
+            for uid, full_name in db.execute(
+                select(User.id, User.full_name).where(User.id.in_(user_ids))
+            ).all()
+        }
+
+    status_items = [
+        StatusHistoryResponse(
+            id=row.id,
+            from_status=row.from_status,
+            to_status=row.to_status,
+            changed_by_id=row.changed_by_id,
+            changed_by_name=user_names.get(row.changed_by_id) if row.changed_by_id else None,
+            note=row.note,
+            created_at=row.created_at,
+        )
+        for row in statuses
+    ]
+    assignment_items = [
+        AssignmentHistoryResponse(
+            id=row.id,
+            from_assignee_id=row.from_assignee_id,
+            to_assignee_id=row.to_assignee_id,
+            changed_by_id=row.changed_by_id,
+            from_assignee_name=user_names.get(row.from_assignee_id) if row.from_assignee_id else None,
+            to_assignee_name=user_names.get(row.to_assignee_id) if row.to_assignee_id else None,
+            changed_by_name=user_names.get(row.changed_by_id) if row.changed_by_id else None,
+            created_at=row.created_at,
+        )
+        for row in assignments
+    ]
+    escalation_items = [
+        _escalation_history_from_audit(log, user_names) for log in escalation_logs
+    ]
+
     return TicketHistoryResponse(
-        status_changes=[StatusHistoryResponse.model_validate(row) for row in statuses],
-        assignments=[AssignmentHistoryResponse.model_validate(row) for row in assignments],
+        status_changes=status_items,
+        assignments=assignment_items,
+        escalations=escalation_items,
     )
 
 
@@ -348,6 +606,8 @@ def update_ticket(db: Session, ticket_id: int, payload: TicketUpdate, user: User
         raise _forbidden()
     _require_status_perm(ticket, user)
 
+    previous_escalated = bool(ticket.is_escalated)
+    previous_escalated_at = ticket.escalated_at
     changes: dict[str, Any] = {}
     override_note = "Administrative override" if user.role in {"hod", "admin"} else None
 
@@ -416,17 +676,70 @@ def update_ticket(db: Session, ticket_id: int, payload: TicketUpdate, user: User
         ticket.resolution_summary = supplied_summary
         changes["resolution_summary"] = supplied_summary
 
-    if changes.get("is_escalated") is True:
-        if ticket.escalated_at is None:
-            ticket.escalated_at = utc_now()
+    if "is_escalated" in changes:
+        now = utc_now()
+        new_escalated = bool(changes["is_escalated"])
+        if new_escalated:
+            ticket.escalated_at = now
+            escalation_action = "ticket.escalated"
+            history_note = f"Escalated by {user.full_name} ({user.role.upper()}): not escalated -> escalated"
+            notif_event = TICKET_MANUAL_ESCALATED
+            notif_subject = f"Escalated ticket {ticket.public_reference}"
+            notif_message = (
+                f"Ticket escalated by {user.full_name} ({user.role.upper()}). "
+                f"Escalation state changed from not escalated to escalated."
+            )
+        else:
+            ticket.escalated_at = None
+            escalation_action = "ticket.deescalated"
+            history_note = f"De-escalated by {user.full_name} ({user.role.upper()}): escalated -> not escalated"
+            notif_event = TICKET_DEESCALATED
+            notif_subject = f"De-escalated ticket {ticket.public_reference}"
+            notif_message = (
+                f"Escalation removed by {user.full_name} ({user.role.upper()}). "
+                f"Escalation state changed from escalated to not escalated."
+            )
+
+        db.add(
+            TicketStatusHistory(
+                ticket_id=ticket.id,
+                from_status=ticket.status,
+                to_status=ticket.status,
+                changed_by_id=user.id,
+                note=history_note[:255],
+            )
+        )
         record_audit(
             db,
             actor=user,
-            action="ticket.escalated",
+            action=escalation_action,
             entity_type="ticket",
             entity_id=ticket.id,
-            details={"public_reference": ticket.public_reference},
+            details={
+                "public_reference": ticket.public_reference,
+                "previous_is_escalated": previous_escalated,
+                "new_is_escalated": new_escalated,
+                "previous_escalated_at": (
+                    previous_escalated_at.isoformat() if previous_escalated_at else None
+                ),
+                "new_escalated_at": now.isoformat() if new_escalated else None,
+                "actor_name": user.full_name,
+                "mode": "manual",
+                "note": history_note,
+            },
         )
+        recipients = escalation_recipients(db, ticket, include_student=False)
+        if recipients:
+            notify_ticket_event(
+                db,
+                ticket=ticket,
+                event_type=notif_event,
+                recipients=recipients,
+                subject=notif_subject,
+                actor=user,
+                public_message=notif_message,
+            )
+
     if any(key != "status" for key in changes):
         record_audit(
             db,

@@ -101,8 +101,9 @@ export function Sidebar({ open, collapsed, onClose, onToggleCollapsed }: Sidebar
         )}
       >
         <div className={cn('flex h-[68px] shrink-0 items-center border-b border-white/10', collapsed ? 'lg:justify-center lg:px-0' : 'px-5')}>
-          <Link href="/dashboard" className="flex min-w-0 items-center gap-3" onClick={onClose} aria-label="Smart Query home">
+          <Link href="/dashboard" className="flex min-w-0 items-center gap-3" onClick={onClose}>
             <BrandMark inverted size={38} />
+            <span className="sr-only">Dashboard home</span>
             <span className={cn('min-w-0', collapsed && 'lg:hidden')}>
               <span className="block text-sm font-semibold leading-tight">Smart Query</span>
               <span className="block text-[11px] text-teal-200">Communication Hub</span>

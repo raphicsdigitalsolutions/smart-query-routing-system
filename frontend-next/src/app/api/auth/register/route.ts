@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 
 const registerSchema = z.object({
   full_name: z.string().trim().min(2).max(120),
-  email: z.string().trim().email().max(255),
+  email: z.string().trim().max(255).pipe(z.email()),
   password: z.string().min(12).max(128),
 });
 
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const parsed = registerSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: 'Validation error', detail: parsed.error.flatten(), code: 'validation_error' },
+        { success: false, error: 'Validation error', detail: z.flattenError(parsed.error), code: 'validation_error' },
         { status: 422 },
       );
     }
