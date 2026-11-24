@@ -9,7 +9,7 @@
   "crons": [
     {
       "path": "/api/v1/tickets/escalation/sweep",
-      "schedule": "0 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }

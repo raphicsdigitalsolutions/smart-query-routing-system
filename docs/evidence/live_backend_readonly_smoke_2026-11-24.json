@@ -1,0 +1,26 @@
+[
+    {
+        "url":  "https://smart-query-backend.vercel.app/health",
+        "status_code":  200,
+        "body":  "{\"success\":true,\"status\":\"healthy\"}",
+        "error":  null
+    },
+    {
+        "url":  "https://smart-query-backend.vercel.app/api/v1/status",
+        "status_code":  200,
+        "body":  "{\"success\":true,\"service\":\"Smart Query Routing System\",\"version\":\"1.0.0\",\"api_prefix\":\"/api/v1\"}",
+        "error":  null
+    },
+    {
+        "url":  "https://smart-query-backend.vercel.app/api/v1/status/database",
+        "status_code":  200,
+        "body":  "{\"success\":true,\"database\":\"connected\"}",
+        "error":  null
+    },
+    {
+        "url":  "https://smart-query-backend.vercel.app/api/v1/departments",
+        "status_code":  401,
+        "body":  null,
+        "error":  "The remote server returned an error: (401) Unauthorized."
+    }
+]

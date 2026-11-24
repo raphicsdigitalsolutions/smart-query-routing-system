@@ -1,0 +1,23 @@
+{
+  "check": "release-v1 read-only database verification",
+  "status": "PASS",
+  "source": "git-ignored backend/.env.release_v1 connection file",
+  "value_disclosure": "Database URL value was not printed, staged or copied into the repository.",
+  "read_only": true,
+  "writes_performed": false,
+  "current_database": "neondb",
+  "database_name_from_url": "neondb",
+  "database_url_fingerprint_sha256_12": "5d1fc726d19b",
+  "database_host_fingerprint_sha256_12": "141f6064ec7f",
+  "alembic_version": "feedf21773e1",
+  "public_table_count": 17,
+  "departments": 4,
+  "users": 0,
+  "tickets": 0,
+  "branch_identity_note": "Branch identity is taken from the operator-provided git-ignored .env.release_v1 file name; the Neon UI session was unavailable and Vercel withholds sensitive DATABASE_URL values.",
+  "non_actions": [
+    "No production user, ticket, email, WhatsApp message or external notification was created.",
+    "No environment variable, provider configuration, database content or schema was modified.",
+    "The old production database was not accessed by this check."
+  ]
+}

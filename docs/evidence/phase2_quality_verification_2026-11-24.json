@@ -1,0 +1,104 @@
+{
+  "phase": "PHASE 2 - TEST / QUALITY",
+  "generated_at_local": "2026-11-24T06:20:00+05:00",
+  "backend": {
+    "command": ".\\.venv\\Scripts\\python.exe -m pytest -q",
+    "working_directory": "backend",
+    "result": "229 passed, 17 warnings in 410.30s (0:06:50)",
+    "failed": 0,
+    "errors": 0,
+    "warnings": "Pre-existing LangSmith asyncio.iscoroutinefunction DeprecationWarning (17)",
+    "log": "docs/evidence/final_backend_pytest_2026-11-24.log",
+    "canonical_evidence": "docs/evidence/final_backend_test.json"
+  },
+  "frontend": {
+    "vitest": {
+      "command": "npm run test",
+      "result": "3 passed",
+      "log": "docs/evidence/final_frontend_vitest_2026-11-24.log"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "result": "PASS (no output)",
+      "log": "docs/evidence/final_frontend_lint_2026-11-24.log"
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "result": "PASS (no output)",
+      "log": "docs/evidence/final_frontend_typecheck_2026-11-24.log"
+    },
+    "build": {
+      "command": "npm run build",
+      "result": "PASS (Next.js 16.4.6 webpack build; 12/12 static pages generated)",
+      "log": "docs/evidence/final_frontend_build_2026-11-24.log"
+    },
+    "playwright_axe": {
+      "command": "npm run test:e2e",
+      "result": "12 passed (2.0m)",
+      "failed": 0,
+      "log": "docs/evidence/final_frontend_e2e_2026-11-24.log",
+      "canonical_evidence": "docs/evidence/e2e_axe_result.json"
+    },
+    "npm_audit": {
+      "all": {
+        "command": "npm audit --json",
+        "total_vulnerabilities": 0,
+        "evidence": "docs/evidence/npm_audit_final_2026-11-24.json"
+      },
+      "production_only": {
+        "command": "npm audit --omit=dev --json",
+        "total_vulnerabilities": 0,
+        "evidence": "docs/evidence/npm_audit_prod_final_2026-11-24.json"
+      }
+    }
+  },
+  "docker": {
+    "compose_db_config": "PASS (docker compose -f docker-compose.db.yml config --quiet)",
+    "compose_full_config": "PASS (docker compose -f docker-compose.yml config --quiet)",
+    "dockerfile_check": "PASS (docker build --check .: Check complete, no warnings found)"
+  },
+  "alembic": {
+    "heads": "feedf21773e1 (head)",
+    "current_local_configured_database": "feedf21773e1 (head)",
+    "check": "No new upgrade operations detected.",
+    "note": "The local configured database was queried read-only; no migration was applied and no production database was touched."
+  },
+  "live_backend_readonly": {
+    "evidence": "docs/evidence/live_backend_readonly_smoke_2026-11-24.json",
+    "health": "HTTP 200 {\"success\":true,\"status\":\"healthy\"}",
+    "status": "HTTP 200 {\"success\":true,\"service\":\"Smart Query Routing System\",\"version\":\"1.0.0\",\"api_prefix\":\"/api/v1\"}",
+    "database_readiness": "HTTP 200 {\"success\":true,\"database\":\"connected\"}",
+    "departments": "HTTP 401 unauthenticated; expected for the protected endpoint. No production user or ticket was created."
+  },
+  "release_v1_database_verification": {
+    "status": "PASS - READ ONLY",
+    "evidence": "docs/evidence/release_v1_readonly_verification_2026-11-24.json",
+    "source": "git-ignored backend/.env.release_v1 connection file; value not printed, staged or copied into the repository",
+    "results": {
+      "database_name": "neondb",
+      "database_url_fingerprint_sha256_12": "5d1fc726d19b",
+      "database_host_fingerprint_sha256_12": "141f6064ec7f",
+      "alembic_version": "feedf21773e1",
+      "public_table_count": 17,
+      "departments": 4,
+      "users": 0,
+      "tickets": 0,
+      "writes_performed": false
+    },
+    "supporting_live_checks": [
+      "Vercel Production DATABASE_URL metadata shows one sensitive variable targeting production only.",
+      "Live backend health, status and database readiness endpoints returned HTTP 200.",
+      "Vercel sensitive values and the Neon console session were unavailable, so branch identity was taken from the operator-provided git-ignored .env.release_v1 file name rather than independently via the Neon UI."
+    ],
+    "not_claimed": [
+      "The Vercel Production DATABASE_URL value matched the local .env.release_v1 value by direct comparison; Vercel withholds sensitive values.",
+      "Old production database state after the environment switch.",
+      "Any production write, user creation or ticket creation."
+    ]
+  },
+  "non_actions": [
+    "No test or verification command created a production user, ticket, email, WhatsApp message or external notification.",
+    "No environment variable, provider configuration, DNS, billing setting, registry or production database was modified.",
+    "No .env file contents were printed or copied into the repository."
+  ]
+}

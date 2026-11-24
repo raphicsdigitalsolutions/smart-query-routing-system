@@ -1,0 +1,90 @@
+{
+  "phase": "PHASE 1 - AUDIT",
+  "generated_at_local": "2026-11-24T05:58:22.2176737+05:00",
+  "repository": {
+    "path": "C:\\Users\\user\\OneDrive\\Desktop\\SmartQuerySystem",
+    "remote": "https://github.com/raphicsdigitalsolutions/smart-query-routing-system.git",
+    "branch": "main",
+    "head": "b51dd3184573e746d8efa146e8a1770eab14149d",
+    "origin_main": "b51dd3184573e746d8efa146e8a1770eab14149d",
+    "ahead_by": 0,
+    "behind_by": 0,
+    "tags": [],
+    "working_tree": "clean except backend/vercel.json",
+    "modified_tracked_paths": [
+      "backend/vercel.json"
+    ],
+    "untracked_paths": [],
+    "diff_check": "no whitespace errors",
+    "recent_commits": [
+      "b51dd3184573e746d8efa146e8a1770eab14149d docs: refresh deployment report and slides PDFs with latest verified metrics",
+      "75d6f16 Complete final submission sprint: fix npm audit CVEs, unify Supervisor Docker image, reconcile docs",
+      "6f388d0 Initial release: Smart Query Routing and Email Automation System"
+    ]
+  },
+  "vercel_backend": {
+    "project": "smart-query-backend",
+    "project_id": "prj_PUiSeIKOE0BtP02Pm1NULvmURmX6",
+    "deployment_id": "dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM",
+    "deployment_url": "https://smart-query-backend-ol5flop48-inforaphicsdigital-8444.vercel.app",
+    "aliases": [
+      "https://smart-query-backend.vercel.app",
+      "https://smart-query-backend-inforaphicsdigital-8444.vercel.app"
+    ],
+    "target": "production",
+    "ready_state": "READY",
+    "source": "cli",
+    "git_source": null,
+    "git_root_directory": "backend",
+    "github_commit_ref": "main",
+    "github_commit_repo": "raphicsdigitalsolutions/smart-query-routing-system",
+    "github_commit_sha": "b51dd3184573e746d8efa146e8a1770eab14149d",
+    "git_dirty": "1",
+    "deployed_vercel_config": {
+      "rewrites": [
+        {
+          "source": "/(.*)",
+          "destination": "/api/index"
+        }
+      ],
+      "crons": [
+        {
+          "path": "/api/v1/tickets/escalation/sweep",
+          "schedule": "0 0 * * *"
+        }
+      ],
+      "name": "smart-query-backend",
+      "version": 2
+    },
+    "live_cron_list": [
+      {
+        "path": "/api/v1/tickets/escalation/sweep",
+        "schedule": "0 0 * * *"
+      }
+    ],
+    "conclusion": "The active production deployment was created from CLI using commit b51dd31 with an uncommitted working tree. It includes the daily cron from the local file, not the hourly cron committed on main."
+  },
+  "cron_reconciliation": {
+    "committed_main": {
+      "path": "backend/vercel.json",
+      "git_blob": "989b4c69221ed45e991cfd5a38417a365776a915",
+      "schedule": "0 * * * *"
+    },
+    "working_tree": {
+      "path": "backend/vercel.json",
+      "git_blob": "4818e526b1db3b55a37b9a28d31546db925a6615",
+      "schedule": "0 0 * * *"
+    },
+    "deployed": {
+      "schedule": "0 0 * * *",
+      "source": "Vercel inspect JSON and vercel crons ls"
+    },
+    "vercel_hobby_rule": "Legacy Vercel Cron Jobs on Hobby are limited to at most once per day; expressions such as 0 * * * * fail deployment. Invocation may occur at any time within the scheduled hour.",
+    "decision": "Preserve the daily expression 0 0 * * * and commit it to main so repository source matches the verified deployment and Hobby plan constraint. Do not revert to hourly."
+  },
+  "non_actions": [
+    "No commit, push, tag, branch, deploy, redeploy, environment-variable change, registry write, production database access, credential rotation, or destructive operation was performed during this audit.",
+    "No .env file contents were read or printed.",
+    "Vercel CLI calls were read-only inspect/list/api GET operations."
+  ]
+}
