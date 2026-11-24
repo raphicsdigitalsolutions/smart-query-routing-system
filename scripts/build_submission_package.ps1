@@ -1,9 +1,13 @@
 $ErrorActionPreference = 'Stop'
 
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
 $root = (git rev-parse --show-toplevel).Trim()
 $submission = Join-Path $root 'submission'
 $package = Join-Path $submission 'SmartQuerySystem_Final_Submission'
 $zip = Join-Path $submission 'SmartQuerySystem_Final_Submission.zip'
+$evidence = Join-Path $root 'docs\evidence\final_submission_package_2026-11-24.json'
 $commit = (git rev-parse HEAD).Trim()
 
 Write-Host "Building submission package from $commit"
@@ -18,11 +22,13 @@ New-Item -ItemType Directory -Path $package -Force | Out-Null
 
 $exclude = @(
     '^submission/',
-    '(^|/)\.env(\.|$)',
+    '(^|/)\.env$',
+    '(^|/)\.env\.(?!example$)[^/]+$',
     '(^|/)\.venv/',
     '(^|/)node_modules/',
     '(^|/)\.next/',
     '(^|/)__pycache__/',
+    '(^|/)\.e2e/',
     '\.(pyc|db|sqlite|dump|key|pem)$'
 )
 
@@ -48,9 +54,14 @@ foreach ($rel in (git ls-files)) {
     $copied++
 }
 
+$envExamples = @(git ls-files | Where-Object {
+    $_ -match '(^|/)\.env\.example$' -and $_ -notmatch '^submission/'
+})
+
+$generatedAt = (Get-Date).ToString('yyyy-MM-ddTHH:mm:sszzz')
 $manifest = [ordered]@{
     package = 'Smart Query Routing System - Final Hackathon Submission'
-    generated_at_local = (Get-Date).ToString('yyyy-MM-ddTHH:mm:sszzz')
+    generated_at_local = $generatedAt
     source_commit = $commit
     github_main = 'https://github.com/raphicsdigitalsolutions/smart-query-routing-system'
     frontend = 'https://smart-query-routing-system.netlify.app'
@@ -84,27 +95,75 @@ $manifest = [ordered]@{
         'Google OAuth, SMTP, Meta WhatsApp and real-user OpenAI BYOK were NOT VERIFIED.',
         'University/institutional approval is NOT VERIFIED.'
     )
+    env_examples_included = $envExamples
+    excluded = @('.env variants other than .example', '.venv', 'node_modules', '.next', '__pycache__', '.e2e', 'caches', 'DB dumps', 'key files')
     tracked_files_copied = $copied
 }
-$manifestPath = Join-Path $package 'RELEASE_MANIFEST.json'
 $enc = New-Object System.Text.UTF8Encoding($false)
+$manifestPath = Join-Path $package 'RELEASE_MANIFEST.json'
 [System.IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Depth 8), $enc)
 
 Copy-Item -LiteralPath (Join-Path $root 'docs\HACKATHON_DEPLOYMENT_REPORT.pdf') -Destination (Join-Path $submission 'HACKATHON_DEPLOYMENT_REPORT.pdf') -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs\HACKATHON_DEPLOYMENT_SLIDES.pdf') -Destination (Join-Path $submission 'HACKATHON_DEPLOYMENT_SLIDES.pdf') -Force
 
-Compress-Archive -Path (Join-Path $package '*') -DestinationPath $zip -CompressionLevel Optimal
+$packageFiles = @(Get-ChildItem -LiteralPath $package -Recurse -File | Sort-Object FullName)
+$zipStream = [System.IO.File]::Open($zip, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+$archive = New-Object System.IO.Compression.ZipArchive($zipStream, [System.IO.Compression.ZipArchiveMode]::Create)
+$fixedTime = [datetime]'2026-11-24T00:00:00'
+foreach ($file in $packageFiles) {
+    $rel = $file.FullName.Substring($package.Length + 1).Replace('\', '/')
+    $entry = $archive.CreateEntry($rel, [System.IO.Compression.CompressionLevel]::Optimal)
+    $entry.LastWriteTime = $fixedTime
+    $srcStream = [System.IO.File]::OpenRead($file.FullName)
+    $dstStream = $entry.Open()
+    $srcStream.CopyTo($dstStream)
+    $dstStream.Dispose()
+    $srcStream.Dispose()
+}
+$archive.Dispose()
+$zipStream.Dispose()
 
-$packageFiles = @(Get-ChildItem -LiteralPath $package -Recurse -File)
-$secretFiles = @($packageFiles | Where-Object { $_.Name -like '.env*' -or $_.Extension -in @('.key', '.pem', '.pfx', '.p12', '.db', '.sqlite', '.dump') })
-$dependencyDirs = @(Get-ChildItem -LiteralPath $package -Recurse -Directory | Where-Object { $_.Name -in @('node_modules', '.venv', '__pycache__', '.next') })
+$zipHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $zip).Hash.ToLowerInvariant()
+$reportHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $submission 'HACKATHON_DEPLOYMENT_REPORT.pdf')).Hash.ToLowerInvariant()
+$slidesHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $submission 'HACKATHON_DEPLOYMENT_SLIDES.pdf')).Hash.ToLowerInvariant()
+$secretFiles = @($packageFiles | Where-Object { $_.Name -like '.env*' -and $_.Name -ne '.env.example' -or $_.Extension -in @('.key', '.pem', '.pfx', '.p12', '.db', '.sqlite', '.dump') })
+$dependencyDirs = @(Get-ChildItem -LiteralPath $package -Recurse -Directory | Where-Object { $_.Name -in @('node_modules', '.venv', '__pycache__', '.next', '.e2e') })
+
+$verification = [ordered]@{
+    package = 'Smart Query Routing System - Final Hackathon Submission'
+    generated_at_local = $generatedAt
+    source_commit = $commit
+    source_branch = 'main'
+    archive = 'submission/SmartQuerySystem_Final_Submission.zip'
+    archive_sha256 = $zipHash
+    archive_bytes = (Get-Item -LiteralPath $zip).Length
+    archive_entry_paths = 'forward-slash relative paths'
+    package_directory = 'submission/SmartQuerySystem_Final_Submission'
+    files_in_package = $packageFiles.Count
+    evidence_files = @($packageFiles | Where-Object { $_.FullName -like '*\docs\evidence\*' }).Count
+    env_examples_included = $envExamples.Count
+    secret_or_binary_files = $secretFiles.Count
+    dependency_directories = $dependencyDirs.Count
+    submission_entries_in_archive = 0
+    pdf_hashes = @{
+        'submission/HACKATHON_DEPLOYMENT_REPORT.pdf' = $reportHash
+        'submission/HACKATHON_DEPLOYMENT_SLIDES.pdf' = $slidesHash
+    }
+    limitations = @(
+        'The archive is a gitignored local deliverable; builder source is scripts/build_submission_package.ps1.',
+        'Regenerating the archive after a new commit or timestamp changes the SHA-256 hash; verify against this evidence file.'
+    )
+}
+[System.IO.File]::WriteAllText($evidence, ($verification | ConvertTo-Json -Depth 8), $enc)
 
 [pscustomobject]@{
     source_commit = $commit
     files_in_package = $packageFiles.Count
-    zip_bytes = (Get-Item -LiteralPath $zip).Length
+    evidence_files = $verification.evidence_files
+    env_examples_included = $envExamples.Count
+    zip_bytes = $verification.archive_bytes
+    zip_sha256 = $zipHash
     secret_or_binary_files = $secretFiles.Count
     dependency_directories = $dependencyDirs.Count
-    package = $package
-    zip = $zip
+    evidence_json = $evidence
 } | ConvertTo-Json -Depth 4

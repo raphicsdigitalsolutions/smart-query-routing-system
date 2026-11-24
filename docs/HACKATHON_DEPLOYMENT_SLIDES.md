@@ -123,7 +123,7 @@ addendum is superseded by the 2026-11-24 addendum below.
 
 Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`.
 
-- Git `origin/main`: `2cb5595ee7a38c85c63223079dc9d17a290ed089` (`b51dd31` → `7ad663e` → `eb30f92` → `2cb5595`); clean working tree after that commit.
+- Git release-evidence commit: `2cb5595ee7a38c85c63223079dc9d17a290ed089` (`b51dd31` → `7ad663e` → `eb30f92` → `2cb5595`); clean working tree after that commit.
 - Vercel deployment `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` is READY/production/source CLI with the two aliases above. Deployed metadata commit `b51dd31` had a dirty CLI working tree, but the deployed config already contains the final daily cron and current main matches. Live cron list: one job, `0 0 * * *`, `/api/v1/tickets/escalation/sweep`; invocation NOT VERIFIED.
 - Netlify public root and `/api/health` HTTP 200, but authenticated deploy state and source sync NOT VERIFIED (API 401, no token); live Turbopack chunks vs current webpack build prevent a "matches main" claim. Deploy `6b02db1360e3188d7f1074c6` is unconfirmed. Owner: confirm/redeploy from GitHub main; no redeploy performed.
 - `release-v1` database read-only: `neondb`, URL fingerprint `5d1fc726d19b`, host fingerprint `141f6064ec7f`, Alembic `feedf21773e1`, 17 public tables, 4 departments, 0 users, 0 tickets, no writes. Branch identity from the git-ignored `backend/.env.release_v1` file name; hosted equality and old DB state NOT VERIFIED.

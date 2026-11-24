@@ -190,7 +190,7 @@ As of 2026-11-23 publication is still **BLOCKED** and no registry content was ch
 | Previously compromised OpenAI key revoked | **PASS** — provider returned `401 invalid_api_key` |
 | Live end-to-end workflow (§11) | **PASS** |
 | Production department seed data | **PASS** — 3 active departments seeded via audited admin API (§15) |
-| No commits or pushes to Git (deployment-time, historical) | **PASS at the time**; current `origin/main` is `2cb5595ee7a38c85c63223079dc9d17a290ed089` with a clean working tree |
+| No commits or pushes to Git (deployment-time, historical) | **PASS at the time**; current release-evidence commit is `2cb5595ee7a38c85c63223079dc9d17a290ed089` with a clean working tree |
 
 ## 8. Conclusion
 
@@ -425,7 +425,7 @@ were not verified. The generated PDF retains the historical wording; this addend
 
 Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`. The prior `FAIL — DO NOT DEPLOY` wording in this report is historical; the current verdict is **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**.
 
-- **Git:** `origin/main` is `2cb5595ee7a38c85c63223079dc9d17a290ed089`; chain `b51dd31` → `7ad663e` (daily cron + Phase 1/2 evidence) → `eb30f92` (Docker Hub evidence) → `2cb5595` (live verification evidence). Working tree was clean after that commit.
+- **Git:** release-evidence commit is `2cb5595ee7a38c85c63223079dc9d17a290ed089`; chain `b51dd31` → `7ad663e` (daily cron + Phase 1/2 evidence) → `eb30f92` (Docker Hub evidence) → `2cb5595` (live verification evidence). Working tree was clean after that commit.
 - **Vercel backend:** deployment `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM`, READY, target `production`, source CLI, aliases `smart-query-backend.vercel.app` and `smart-query-backend-inforaphicsdigital-8444.vercel.app`. Metadata commit `b51dd31` with a dirty CLI working tree; the deployed config already contains the daily cron and current main matches. Hobby permits at most once/day, so the final schedule is `0 0 * * *` for `/api/v1/tickets/escalation/sweep`; the live cron list shows exactly that one job. Schedule existence is verified; actual hosted invocation is **NOT VERIFIED**. Live `/health`, `/api/v1/status` and `/api/v1/status/database` returned HTTP 200; `/api/v1/departments` returned HTTP 401 as expected.
 - **Netlify frontend:** public root and `/api/health` returned HTTP 200. Authenticated deploy state and source sync are **NOT VERIFIED** (no token; API 401). Live HTML uses Turbopack chunks while current main builds with webpack after commit `75d6f16`; do **not** claim the live site matches current main. Deploy ID `6b02db1360e3188d7f1074c6` could not be authenticated or confirmed. Owner action: confirm/redeploy from GitHub main. No redeploy was performed.
 - **release-v1 database (read-only):** `neondb`, URL fingerprint `5d1fc726d19b`, host fingerprint `141f6064ec7f`, Alembic `feedf21773e1`, 17 public tables, 4 departments, 0 users, 0 tickets, no writes. Branch identity comes from the operator-provided, git-ignored `backend/.env.release_v1` file name; Vercel sensitive values were withheld and the Neon UI was unavailable, so direct equality with the hosted database and any old DB state are **NOT VERIFIED**.

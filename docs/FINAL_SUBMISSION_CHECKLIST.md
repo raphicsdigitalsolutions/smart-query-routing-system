@@ -1,7 +1,7 @@
 # Final University Submission Checklist
 
 **Verification Date:** 2026-11-24  
-**Repository State:** `origin/main` `2cb5595ee7a38c85c63223079dc9d17a290ed089` (`b51dd31` → `7ad663e` → `eb30f92` → `2cb5595`), clean working tree after the final commit.  
+**Repository State:** Release evidence verified at `2cb5595ee7a38c85c63223079dc9d17a290ed089` (`b51dd31` → `7ad663e` → `eb30f92` → `2cb5595`); documentation reconciliation commit `9399508fda3a183cf145db2564434c132b8a8487`; final submission package source commit and archive hash are recorded in `docs/evidence/final_submission_package_2026-11-24.json`. The working tree was clean after each pushed commit.  
 **Status:** **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING** — live demonstration and published artifacts verified; formal institutional sign-off and live provider verification not verified.
 
 ## 1. Engineering & Verification Gates
@@ -17,9 +17,9 @@
 - [x] **Vercel Backend Deployment & Live Smoke:** deployment `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` READY (production, CLI source); `/health` 200 healthy, `/api/v1/status` 200 version 1.0.0, `/api/v1/status/database` 200 connected, `/api/v1/departments` 401 (expected). Exactly one daily `0 0 * * *` cron for `/api/v1/tickets/escalation/sweep`; current main matches deployed config. **Invocation NOT VERIFIED.**
 - [x] **Netlify Public HTTP Check:** `https://smart-query-routing-system.netlify.app` `/` and `/api/health` both HTTP 200 (`Server: Netlify`). Authenticated deploy state and source sync NOT VERIFIED (see §2).
 - [x] **`release-v1` Database Read-Only Verification:** `neondb`, URL fingerprint `sha256_12 5d1fc726d19b`, host fingerprint `141f6064ec7f`, Alembic `feedf21773e1`, 17 public tables, `departments=4`, `users=0`, `tickets=0`, `writes_performed=false` (`docs/evidence/release_v1_readonly_verification_2026-11-24.json`).
-- [x] **Submission Package Hygiene:** `submission/SmartQuerySystem_Final_Submission/` and `.zip` exclude `.env`, `.env.local`, `.venv`, `node_modules`, `.next`, `.e2e`, caches, and real DB dumps.
+- [x] **Submission Package Hygiene:** `submission/SmartQuerySystem_Final_Submission/` and `.zip` include clean tracked source, docs, 4 `.env.example` templates, migrations, and 28 evidence files. They exclude `.env` and other non-template env variants, `.venv`, `node_modules`, `.next`, `.e2e`, caches, key files, and real DB dumps. Verified file count 394; 0 secret/binary files and 0 dependency directories. The archive SHA-256, PDF hashes, and source commit are recorded in `docs/evidence/final_submission_package_2026-11-24.json`; builder source is `scripts/build_submission_package.ps1`.
 
-**Final evidence:** `docs/evidence/phase1_release_audit_2026-11-24.json`, `phase2_quality_verification_2026-11-24.json`, `phase4_docker_hub_release_2026-11-24.json`, `phase5_live_verification_2026-11-24.json`, `release_v1_readonly_verification_2026-11-24.json`, `docker_hub_anonymous_pull_2026-11-24.json`, `final_backend_test.json`, `e2e_axe_result.json`, `npm_audit_final_2026-11-24.json`, `npm_audit_prod_final_2026-11-24.json`.
+**Final evidence:** `docs/evidence/phase1_release_audit_2026-11-24.json`, `phase2_quality_verification_2026-11-24.json`, `phase4_docker_hub_release_2026-11-24.json`, `phase5_live_verification_2026-11-24.json`, `release_v1_readonly_verification_2026-11-24.json`, `docker_hub_anonymous_pull_2026-11-24.json`, `final_backend_test.json`, `e2e_axe_result.json`, `npm_audit_final_2026-11-24.json`, `npm_audit_prod_final_2026-11-24.json`, `final_submission_package_2026-11-24.json`.
 
 ## 2. Explicit Pre-Production / Governance Items (Disclosed Honestly)
 

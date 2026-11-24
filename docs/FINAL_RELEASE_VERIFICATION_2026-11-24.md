@@ -10,13 +10,17 @@ This is the authoritative reconciliation for the Smart Query Routing & Email Aut
 
 - GitHub: `https://github.com/raphicsdigitalsolutions/smart-query-routing-system`
 - Branch: `main`
-- Verified commit: `2cb5595ee7a38c85c63223079dc9d17a290ed089`
-- `HEAD` and `origin/main` matched after the release-evidence commits; working tree was clean.
+- Release-evidence commit: `2cb5595ee7a38c85c63223079dc9d17a290ed089`
+- Documentation reconciliation commit: `9399508fda3a183cf145db2564434c132b8a8487`
+- Submission package source commit and archive hash: `docs/evidence/final_submission_package_2026-11-24.json`
+- `HEAD` and `origin/main` matched after each pushed verification/documentation commit; working trees were clean at those checks.
 - Commit chain:
   - `b51dd31` — prior release baseline.
   - `7ad663e` — committed daily Vercel cron plus Phase 1/2 evidence.
   - `eb30f92` — Docker Hub publication evidence.
   - `2cb5595` — live verification evidence.
+  - `9399508` — final documentation/PDF reconciliation.
+  - Submission-evidence commit — recorded by git after the package build.
 
 ## Quality verification
 
@@ -96,6 +100,13 @@ Required owner action: confirm the current Netlify production deploy and trigger
 
 The older digest `sha256:e9ed70810b3f9e5c6bb5ee1e7fb83847acb423c18a2bb506d9e83a5368450430` is stale and superseded.
 
+## Submission package (2026-11-24)
+
+- Builder: `scripts/build_submission_package.ps1`.
+- Source commit, archive SHA-256, ZIP byte size, PDF hashes, and file counts are recorded in `docs/evidence/final_submission_package_2026-11-24.json`.
+- The package includes clean tracked source, documentation, 4 `.env.example` templates, migrations, and 28 evidence files. It excludes non-template `.env` variants, `.venv`, `node_modules`, `.next`, `.e2e`, caches, key files, and database dumps.
+- `submission/` is gitignored: the folder and ZIP are local deliverables, not committed source. Re-running the builder after a new commit or timestamp produces a new archive hash; verify against the evidence file.
+
 ## Explicitly not verified
 
 - Google OAuth against a live provider account.
@@ -123,3 +134,4 @@ No live verification step created a production user, ticket, email, WhatsApp mes
 - `docs/evidence/e2e_axe_result.json`
 - `docs/evidence/npm_audit_final_2026-11-24.json`
 - `docs/evidence/npm_audit_prod_final_2026-11-24.json`
+- `docs/evidence/final_submission_package_2026-11-24.json`

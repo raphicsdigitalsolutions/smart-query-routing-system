@@ -398,7 +398,7 @@ Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`
 
 | ID | Item | Current status | Evidence / remaining action |
 | --- | --- | --- | --- |
-| Q-01 | Git repository state | **PASS** | `origin/main` `2cb5595ee7a38c85c63223079dc9d17a290ed089`; chain `b51dd31` → `7ad663e` (daily cron + Phase 1/2 evidence) → `eb30f92` (Docker Hub evidence) → `2cb5595` (live verification evidence); clean working tree after that commit. |
+| Q-01 | Git repository state | **PASS** | release-evidence commit `2cb5595ee7a38c85c63223079dc9d17a290ed089`; chain `b51dd31` → `7ad663e` (daily cron + Phase 1/2 evidence) → `eb30f92` (Docker Hub evidence) → `2cb5595` (live verification evidence); clean working tree after that commit. |
 | Q-02 | Backend live deployment | **READY** | Vercel `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM`, target production, source CLI, aliases `smart-query-backend.vercel.app` and `smart-query-backend-inforaphicsdigital-8444.vercel.app`. Metadata commit `b51dd31` with dirty CLI tree; deployed config already contains the daily cron and current main matches. |
 | Q-03 | FR-07 schedule | **SCHEDULE VERIFIED; INVOCATION NOT VERIFIED** | Final `0 0 * * *` for `/api/v1/tickets/escalation/sweep` (Hobby allows at most once/day); live cron list shows exactly that one job. Hosted invocation was not observed. |
 | Q-04 | Live backend smoke | **PASS** | `/health`, `/api/v1/status`, `/api/v1/status/database` HTTP 200; `/api/v1/departments` HTTP 401 expected for unauthenticated caller. |
