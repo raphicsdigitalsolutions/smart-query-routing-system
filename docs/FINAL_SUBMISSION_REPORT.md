@@ -4,7 +4,7 @@
 **Repository:** `https://github.com/raphicsdigitalsolutions/smart-query-routing-system`  
 **Submission Baseline Date:** 2026-11-24  
 **Authoritative Brief:** Virtual University Final Year Project Brief (`AllProjectsS26.pdf`, pp. 30–31; Supervisor: Saima Jamil)  
-**Submission Readiness Verdict:** **PASS for Local / University Demonstration** · **Production Public Release: CONDITIONAL / BLOCKED pending external provider credentials, owner secret rotation, and institutional governance sign-off**
+**Submission Readiness Verdict:** **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING** · Live university/hackathon demonstration verified; formal institutional/governance sign-off and live provider verification are not verified.
 
 ---
 
@@ -49,7 +49,7 @@ FastAPI Backend (backend, Python 3.12+/3.14 venv, SQLAlchemy 2.x, Pydantic v2)
   ├── 5-node LangGraph workflow + official OpenAI SDK (per-user Fernet-encrypted BYOK)
   ├── SMTP & Meta WhatsApp Cloud API delivery adapters + token-gated inbound webhooks
   ├── Optional fail-closed ClamAV malware scanner hook + outside-web-root attachment storage
-  └── Deterministic 24h SLA escalation service + secret-protected cron trigger (/tickets/escalation/sweep)
+  └── Deterministic 24h SLA escalation service + secret-protected cron trigger (/tickets/escalation/sweep), daily Vercel cron `0 0 * * *`
               │
               ▼
 PostgreSQL 16 (Alembic migration head: feedf21773e1; SQLite in-memory/file for isolated tests/demo)
@@ -92,16 +92,16 @@ All 6 previously open frontend dependency vulnerabilities (`2 moderate, 2 high, 
 
 | Suite / Check | Scope | Result |
 | --- | --- | --- |
-| Backend Full Suite | `backend\.venv\Scripts\python.exe -m pytest -q` (SQLite isolated DB) | **229 passed**, 17 pre-existing LangSmith warnings (`292.01s`) |
+| Backend Full Suite | `backend\.venv\Scripts\python.exe -m pytest -q` (SQLite isolated DB) | **229 passed**, 17 pre-existing LangSmith warnings in **410.30s (0:06:50)**, 0 failed/errors (`docs/evidence/final_backend_test.json`) |
 | Backend Compile & Migrations | `compileall` + `alembic heads` + PostgreSQL rehearsal `alembic upgrade head` | **PASS** — clean chain to `feedf21773e1 (head)` |
 | Frontend Audit (`npm audit` & `--omit=dev`) | All `frontend-next` and `frontend` deps | **0 vulnerabilities** (`743` total / `211` prod) |
 | Frontend Typecheck & Lint | `npm run typecheck` (`tsc --noEmit`), `npm run lint` (`eslint .`) | **PASS** — 0 errors, 0 warnings |
 | Frontend Unit Tests | `npm run test` (`vitest run` v4.1.12) | **3 passed** (`useTicketStatusPolling.test.tsx`) |
-| Frontend Production Build | `npm run build` (`next build --webpack` v16.4.6) | **PASS** — all app & API routes built cleanly |
-| Playwright + Axe E2E | `npm run test:e2e` (Chromium + `@axe-core/playwright`) | **12 passed (2.2m)** — 0 serious/critical a11y violations |
+| Frontend Production Build | `npm run build` (`next build --webpack` v16.4.6) | **PASS** — all app & API routes built cleanly, 12/12 static pages |
+| Playwright + Axe E2E | `npm run test:e2e` (Chromium + `@axe-core/playwright`) | **12 passed in 2.0m** — 0 serious/critical a11y violations (`docs/evidence/e2e_axe_result.json`) |
 | Disposable PostgreSQL Restore | `scripts/backup_restore_rehearsal.ps1` on `postgres:16-alpine` | **PASS** — schema & record SHA-256 hashes matched, prod untouched |
-| Docker Compose & Image Builds | `docker compose config --quiet` + `docker build` (backend & Next 16 frontend) | **PASS** — both images built and passed isolated container health + BFF smoke (`/api/health` 200, `/login` 200, `/api/auth/session` 200, `/api/backend/auth/me` 401) |
-| Single Combined Docker Hub Image | `Dockerfile` (`python:3.11-slim` + `node:20-slim` + Supervisor) | **PASS** — published cleanly to `https://hub.docker.com/r/raphicsdigitalsolutions/smart-query-system` (`latest`, `v1.0.0`, digest `sha256:e9ed70810b3f9e5c6bb5ee1e7fb83847acb423c18a2bb506d9e83a5368450430`; anonymous pull + combined BFF/FastAPI/Postgres smoke verified) |
+| Docker Compose & Image Builds | `docker compose -f docker-compose.db.yml config --quiet`, `docker compose -f docker-compose.yml config --quiet`, `docker build --check .` + `docker build` (backend & Next 16 frontend) | **PASS** — both Compose configs valid, build check clean, both images built and passed isolated container health + BFF smoke (`/api/health` 200, `/login` 200, `/api/auth/session` 200, `/api/backend/auth/me` 401); Alembic heads/current `feedf21773e1`, `alembic check` clean |
+| Single Combined Docker Hub Image | `Dockerfile` (`python:3.11-slim` + `node:20-slim` + Supervisor) | **PASS** — published to `https://hub.docker.com/r/raphicsdigitalsolutions/smart-query-system`: `latest` and `v1.0.0` both digest `sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177`, matching local RepoDigests; anonymous pull (temporary empty Docker config, exit 0) and manifest HTTP 200 verified; healthy container, UID 10001, Supervisor backend+frontend RUNNING, backend health/login/api-health/session HTTP 200 with disposable SQLite (email/WhatsApp/worker disabled); no `.env`/key files in image. Older `sha256:e9ed70810b3f9e5c6bb5ee1e7fb83847acb423c18a2bb506d9e83a5368450430` is stale. |
 | Local ClamAV Integration | `clamav/clamav:stable` + 10 pytest cases (`PASS_LOCAL_INTEGRATION_ONLY`) | **PASS locally** — clean `OK` (0), EICAR `FOUND` (1), fail-closed hooks |
 
 > [!NOTE]
@@ -120,6 +120,25 @@ All 6 previously open frontend dependency vulnerabilities (`2 moderate, 2 high, 
 
 ## 9. Known Limitations, Live Blockers & Future Improvements
 
-- **Live External Providers (Not Verified Here):** Real Google OAuth client ID/origin, live SMTP credentials & verified `MAIL_FROM`, live Meta WhatsApp Cloud API tokens/webhook, real-user OpenAI live key smoke test, hosted FR-07 Vercel cron (`ESCALATION_CRON_SECRET`), and GHCR new-tag publication (`write:packages`).
-- **Owner Actions & Governance:** Review/rotate the 4 local fingerprint matches in `docs/evidence/secret_audit.json`; obtain signed university approval for OpenAI BYOK / Meta / FastAPI tool substitutions and zero-cost policy disclosure.
+- **Live External Providers (NOT VERIFIED):** Real Google OAuth client ID/origin, live SMTP credentials & verified `MAIL_FROM`, live Meta WhatsApp Cloud API tokens/webhook, and real-user OpenAI BYOK live smoke test.
+- **Hosted Checks (NOT VERIFIED):** FR-07 hosted cron **invocation** and escalation effect (only the single daily `0 0 * * *` schedule is verified), hosted restore, hosted malware scanner, monitoring/retention, Netlify authenticated deploy state and source sync, and formal institutional/university approval. No formal production sign-off exists.
+- **Netlify:** Public `/` and `/api/health` returned HTTP 200 (`Server: Netlify`), but no token was configured, the API returned 401 without credentials, deploy ID `6b02db1360e3188d7f1074c6` could not be authenticated, and live HTML uses Turbopack chunks while current main builds with webpack after `75d6f16`. The owner must confirm the deploy and redeploy from GitHub `main` if needed; no redeploy was performed.
+- **Database isolation:** The `release-v1` verification was read-only (`writes_performed=false`) on `neondb` with URL fingerprint `sha256_12 5d1fc726d19b`, host fingerprint `141f6064ec7f`, Alembic `feedf21773e1`, 17 public tables, `departments=4`, `users=0`, `tickets=0`. Branch identity came from the git-ignored `backend/.env.release_v1` file name only; direct Vercel-to-`.env` equality and old production database state are NOT claimed.
+- **Owner Actions & Governance:** Review the 4 historical local fingerprint matches in `docs/evidence/secret_audit.json`; obtain signed university approval for OpenAI BYOK / Meta / FastAPI tool substitutions and zero-cost policy disclosure. Optional GHCR publication still needs `write:packages`; the Docker Hub release is already published and pull-verified.
 - **Future Enhancements:** Add WebSocket/SSE push notifications, refresh tokens/password reset UI, real labelled institutional dataset evaluation, and hosted ClamAV sidecar deployment.
+
+---
+
+## 10. Final release state (2026-11-24)
+
+**TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING.** `origin/main` is
+`2cb5595ee7a38c85c63223079dc9d17a290ed089` (`b51dd31` → `7ad663e` → `eb30f92` → `2cb5595`), clean
+after the final commit. Vercel production deployment `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` is READY
+with live backend smoke checks passing; Docker Hub `latest`/`v1.0.0` publish the current digest listed
+in §7; and the `release-v1` database was verified read-only. Final evidence:
+`docs/evidence/phase1_release_audit_2026-11-24.json`,
+`phase2_quality_verification_2026-11-24.json`, `phase4_docker_hub_release_2026-11-24.json`,
+`phase5_live_verification_2026-11-24.json`, `release_v1_readonly_verification_2026-11-24.json`,
+`docker_hub_anonymous_pull_2026-11-24.json`, `final_backend_test.json`, `e2e_axe_result.json`,
+`npm_audit_final_2026-11-24.json`, `npm_audit_prod_final_2026-11-24.json`. Full gate detail is in
+`docs/RELEASE_READINESS.md` and `docs/TEST_REPORT.md` §10.

@@ -1,11 +1,13 @@
 # Cloudflare Zero-Budget Feasibility Audit
 
+> **Historical analysis note:** This document records the 2026-11-22 zero-budget feasibility analysis. Its FAIL verdicts are historical platform-fit findings, **not** the current release decision. The current verified release status is in `docs/evidence/phase5_live_verification_2026-11-24.json`: technical release artifacts are published and verified; formal institutional/governance approval and live provider verification remain open. Current verdict: **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**.
+
 **Project:** Smart Query Routing System  
 **Audit date:** 2026-11-22  
 **Mode:** Read-only technical feasibility study  
 **Scope:** Existing backend, existing Vercel-compatible frontend/BFF contract, Cloudflare Free/Workers/Containers/Hyperdrive/R2/Queues/Email Service limits.  
 **Constraint:** Strict **$0 monthly hosting budget**.  
-**Preserved decisions:** Existing Docker deployment path remains authoritative. Production/public release remains **FAIL — do not deploy** until the previously recorded operator, verification, scope, and approval blockers are closed.
+**Preserved decisions (historical):** Existing Docker deployment path remains authoritative. The 2026-11-22 production/public release was **FAIL — do not deploy** at the time of this analysis; that verdict is superseded by the current status above and is not a current-state deployment instruction.
 
 No source file, configuration file, dependency manifest, Dockerfile, database record, Git object, remote, or deployment setting was modified. Only this report was created. No credentials or secret values are printed.
 
@@ -214,7 +216,7 @@ This is a code change for `backend/app/main.py` or a new Worker wrapper. The cur
 Cloudflare's ASGI adapter source drives lifespan startup and shutdown for each request. Therefore:
 
 - `asyncio.create_task(_escalation_worker())` would be created per request and cancelled after the response.
-- The current escalation schedule would never behave like a persistent hourly job.
+- The then-current escalation schedule would never behave like a persistent hourly job (2026-11-22 analysis).
 - `dispose_engine()` would run repeatedly rather than once per process lifetime.
 - Any expensive startup work would be repeated; current startup is light, but settings/import work still occurs at module load and must fit the 1-second startup limit.
 
@@ -570,14 +572,14 @@ Unverified items are platform-specific:
 - Do not expose backend port 8000 or PostgreSQL port 5432 publicly.
 - Free tiers do not provide production SLAs.
 - The pre-existing data-layer issues remain under Approach C: attachment bytes are write-only with orphan files after cascade deletes, notification dedupe is race-prone, audit rows share the business transaction, and migrations have no concurrency guard and include blocking DDL.
-- Existing production release decision remains **FAIL**.
-- No public deployment approval exists.
+- The 2026-11-22 production release decision was **FAIL** (historical; superseded by the current status at the top of this document).
+- No institutional/public deployment approval existed at the time of this study.
 
 ### Assessment
 
 **CONDITIONAL PASS** for a private/offline or low-traffic demonstration under strict $0, especially with existing Docker plus Cloudflare Tunnel.
 
-**FAIL for production/public release** until all original release blockers are closed and a hosting provider with adequate reliability and approval is selected.
+**FAIL for production/public release under the 2026-11-22 study assumptions** (historical; superseded by the current status at the top of this document) until all original release blockers are closed and a hosting provider with adequate reliability and approval is selected.
 
 ---
 
@@ -711,7 +713,7 @@ Optional, within R2 free quota:
 
 ### Security, data, and operations
 
-51. Existing production release decision remains **FAIL — do not deploy**.
+51. Existing production release decision at the time of this 2026-11-22 study was **FAIL — do not deploy** (historical; superseded by the current status at the top of this document).
 52. Two known local credential findings remain pending operator rotation; values remain redacted and untouched.
 53. Live provider verification remains incomplete for Google OAuth, SMTP, Meta WhatsApp, and real-user OpenAI BYOK.
 54. Original VU scope gaps and Section L deviations lack signed approval.
@@ -766,7 +768,7 @@ Adopt **Approach C** only for a controlled, private, low-traffic demonstration:
 4. Preserve the Node.js BFF and same-origin API contract.
 5. Keep backups coordinated between PostgreSQL and attachments.
 6. Use R2 only within free quotas and only for encrypted backups/artifacts.
-7. Preserve the production release decision: **FAIL — do not deploy**.
+7. Preserve the then-current production release decision: **FAIL — do not deploy** (historical 2026-11-22 status; superseded by the current status at the top of this document).
 
 Any future move to Workers or Containers requires a separate approved migration project, exact dependency proof-of-concept, new architecture documentation, full regression testing, provider verification, and renewed release approval.
 

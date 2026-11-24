@@ -1,9 +1,11 @@
 # Final Release Blockers — Smart Query Routing System
 
-**Document date:** 2026-11-23  
-**Scope:** Local-only final release-blocker reconciliation. No commit, push, tag, branch, deployment,
+> **Current verified release status (2026-11-24):** Technical release artifacts are published and verified; formal institutional/governance approval and live provider verification remain open. Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`. Current verdict: **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**. The 2026-11-23 FAIL verdicts below are historical/superseded; §9 records the current disposition.
+
+**Document date:** 2026-11-23; reconciled 2026-11-24  
+**Scope (2026-11-23 reconciliation; current state in §9):** Local-only final release-blocker reconciliation. No commit, push, tag, branch, deployment,
 registry write, production database access, billing change, or credential rotation/revocation was
-performed.  
+performed at that time.  
 **Authority:** The original brief `C:\Users\user\Downloads\AllProjectsS26.pdf` remains authoritative.
 The in-repo proposal PDF is a derived blueprint, not institutional approval.  
 **Companion runbook:** `docs/OPERATOR_ACTION_CHECKLIST.md` contains operator-owned actions and exact
@@ -13,12 +15,13 @@ commands.
 
 | Target | Verdict | Basis |
 | --- | --- | --- |
-| Production / public release | **FAIL — DO NOT DEPLOY** | Four current-local credential candidates require owner review/rotation; live Google OAuth, SMTP, Meta WhatsApp, real-user BYOK, hosted FR-07 cron, production restore, deployed malware scanning, monitoring/retention and signed university approval are unverified; `npm audit` reports 6 vulnerable packages; publication of the current local changes to GHCR is blocked; original-brief deviations are unsigned. |
-| Local / offline demonstration | **CONDITIONAL PASS** | Backend `225 passed, 17 warnings in 265.61s`; focused malware tests `10 passed`; Playwright + axe `11 passed` with no serious/critical violations; typecheck/lint/build, Compose config, image builds, disposable backup/restore rehearsal and redacted secret triage are complete. Use throwaway/local credentials only; do not expose publicly. |
+| Production / public release | **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING** (historical FAIL superseded) | Technical artifacts are published and verified: `origin/main` `2cb5595`, Vercel deployment `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` READY with the daily cron schedule, Docker Hub image anonymously pull-verified, 0 npm vulnerabilities. Still open: four local credential candidates requiring owner review/rotation; live Google OAuth, SMTP, Meta WhatsApp, real-user BYOK, hosted cron invocation, production restore, deployed malware scanning, monitoring/retention, Netlify source sync and signed university approval; GHCR publication remains blocked. |
+| Local / offline demonstration | **PASS (CONDITIONAL on throwaway credentials)** | Backend `229 passed, 17 warnings in 410.30s`, 0 failed/errors; focused malware tests `10 passed`; Playwright + axe `12 passed in 2.0m` with no serious/critical violations; typecheck/lint/build (`12/12` pages), Compose config, `docker build --check`, image builds, disposable backup/restore rehearsal and redacted secret triage are complete. Use throwaway/local credentials only; do not expose publicly. |
 
 The earlier live hackathon deployment on Netlify/Vercel/Neon is recorded in
-`docs/HACKATHON_DEPLOYMENT_REPORT.md`. It did not close the governance FAIL or any signed-deviation
-requirement.
+`docs/HACKATHON_DEPLOYMENT_REPORT.md`, with the final 2026-11-24 state in §9 below and in
+`docs/evidence/phase5_live_verification_2026-11-24.json`. It did not grant formal approval or close
+any signed-deviation requirement.
 
 ## 2. Resolved contradiction: GHCR image existence and pullability
 
@@ -45,15 +48,21 @@ published, nor that separate `smart-query-backend` / `smart-query-frontend` pack
 Publication of new content remains **BLOCKED** by missing `write:packages`; no registry content was
 changed.
 
-## 3. Dependency blockers (`npm audit`)
+## 3. Dependency blockers (`npm audit`) — historical, remediated 2026-11-24
+
+The 6 vulnerabilities listed below were fully remediated (`vitest@4.1.12`, `zod@4.6.7`,
+`next@16.4.6`, `eslint-config-next@16.4.6` with `next build --webpack`). Current evidence:
+`docs/evidence/npm_audit_post_remediation.json` and `npm_audit_post_remediation_prod.json`;
+both `npm audit` and `npm audit --omit=dev` report **0 vulnerabilities**. The inventory below is
+retained for traceability only.
 
 Evidence: `docs/evidence/npm_audit_full_2026-11-23.json`,
 `docs/evidence/npm_audit_prod_2026-11-23.json`,
 `docs/evidence/npm_audit_summary.json` and
 `docs/evidence/npm_dependency_paths_2026-11-23.txt`.
 
-`npm audit` reports **6 vulnerable packages (2 moderate, 2 high, 2 critical)** across **10 unique
-GHSA advisories**. `npm audit --omit=dev` reports 3 packages (`next`, `postcss`, `zod`); the critical
+At the 2026-11-23 audit, `npm audit` reported **6 vulnerable packages (2 moderate, 2 high, 2 critical)** across **10 unique
+GHSA advisories**. `npm audit --omit=dev` reported 3 packages (`next`, `postcss`, `zod`); the critical
 Vitest-family findings are dev-toolchain findings and are not installed in the production-only
 Docker runner (`npm ci --omit=dev`), though dev dependencies are present in build stages.
 
@@ -119,7 +128,7 @@ Exact commands and prerequisites are in `docs/OPERATOR_ACTION_CHECKLIST.md` and
 | SMTP (FR-02/FR-08) | SMTP service, notification templates, retries/dedupe | Fake-provider tests, notification rows | Real mailbox/app password, verified `MAIL_FROM`, SPF/DKIM/DMARC, delivered message and `notifications` status |
 | Meta WhatsApp (FR-02/FR-08) | Webhook GET handshake, token-gated inbound adapter, outbound sender | `tests/test_integrations.py`, `tests/test_notifications.py` | Real Meta token/phone ID/verify token, registered webhook, approved recipient, live send + inbound ticket |
 | Real-user BYOK (FR-03/FR-05) | Fernet-encrypted per-user keys, validation endpoint, no global fallback | BYOK/AI tests, live-key opt-in guard, fail-closed 402 | User-supplied real key, live low-cost inference, token/cost metadata, safe removal afterwards |
-| Hosted FR-07 cron | Secret-protected sweep, hourly `backend/vercel.json`, deterministic escalation | `tests/test_escalation.py`, `tests/test_escalation_serverless.py`, E2E-ready endpoint | Hosted scheduler execution, `ESCALATION_CRON_SECRET` configured, observed overdue escalation/audit/notification in target host |
+| Hosted FR-07 cron | Secret-protected sweep, daily `0 0 * * *` `backend/vercel.json`, deterministic escalation | `tests/test_escalation.py`, `tests/test_escalation_serverless.py`, E2E-ready endpoint; live cron list shows one daily job (schedule verified) | Actual hosted invocation, `ESCALATION_CRON_SECRET` state, observed overdue escalation/audit/notification in target host |
 | Production backup/restore | `pg_dump`/`pg_restore` docs, attachment-volume backup guidance | Disposable rehearsal PASS with schema hash `ed7d1ab7...` and record hash `00e07e9f...`; stale row 1→0 | Host/provider-equivalent restore to scratch, retention/owner sign-off, no production restore performed |
 | Deployed malware scanning | Optional fail-closed ClamAV hook | Real ClamAV local integration `PASS_LOCAL_INTEGRATION_ONLY`, 10 tests pass | Scanner deployed/configured on target host, `MALWARE_SCAN_ENABLED=true`, live clean/EICAR verification |
 | Monitoring, retention, deletion policy | Health checks, audit logs, docs | Local health/audit checks | Monitoring provider, alerts, written retention/deletion approval, log review |
@@ -135,18 +144,18 @@ Local PASS never implies live provider, hosted scheduler, registry or governance
 | Code-level security remediation implemented and locally tested | PASS |
 | Full backend, frontend, Compose, image-content, E2E/axe verification | PASS (local) |
 | Redacted secret triage complete; no values printed or changed | PASS |
-| Four current-local credential candidates reviewed/rotated by owner | FAIL — pending |
-| BYOK re-encryption migration executed safely | FAIL — pending; plan ready |
-| Dependency audit (`npm audit`) | FAIL — 6 vulnerable packages; fixes unapproved |
-| Live provider verification (Google, SMTP, Meta, OpenAI BYOK) | FAIL — blocked |
-| Hosted FR-07 cron | NOT VERIFIED |
+| Four current-local credential candidates reviewed/rotated by owner | OPEN — owner review/rotation pending |
+| BYOK re-encryption migration executed safely | OPEN — owner action pending; plan ready |
+| Dependency audit (`npm audit`) | PASS — 0 vulnerabilities after 2026-11-24 remediation (historical FAIL superseded) |
+| Live provider verification (Google, SMTP, Meta, OpenAI BYOK) | NOT VERIFIED — blocked without real credentials |
+| Hosted FR-07 cron schedule | PASS (one daily job); invocation NOT VERIFIED |
 | Production-equivalent restore and malware deployment | NOT VERIFIED |
 | GHCR package existence / anonymous pull | PASS (read-only evidence) |
-| GHCR publication of current local changes | BLOCKED — missing `write:packages` |
-| Signed university scope/deviation approval | FAIL — pending |
-| Public deployment approval and host plan | FAIL — pending |
+| GHCR publication of the release | BLOCKED — missing `write:packages` (Docker Hub publication PASS) |
+| Signed university scope/deviation approval | OPEN — formal approval pending |
+| Public deployment approval and host plan | OPEN — formal approval pending |
 
-**Final: FAIL for production/public release; CONDITIONAL PASS for local/offline demonstration only.**
+**Final: TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING for production/public release; PASS (conditional on throwaway credentials) for local/offline demonstration.** The earlier FAIL is historical.
 
 ## 7. Evidence index
 
@@ -163,9 +172,22 @@ Local PASS never implies live provider, hosted scheduler, registry or governance
   `docs/MASTER_REQUIREMENTS_CHECKLIST.md`, `docs/SECRET_AUDIT_REMEDIATION_PLAN.md`,
   `docs/TEST_REPORT.md`, `README.md`
 
-## 8. Explicit non-actions
+## 8. Explicit non-actions of the 2026-11-23 reconciliation (historical)
 
 No commit, push, branch, tag, deployment, DNS/TLS change, provider registration, billing change,
 GitHub remote change, registry write, production database access/modification, credential
 rotation/revocation, or destructive working-tree change was performed while producing this document.
-The E2E files remain untracked working-tree files; they are not described as committed.
+The E2E files were untracked working-tree files at that time; they are now committed on current main
+(see §9).
+
+## 9. Final 2026-11-24 release state (current)
+
+Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`. Current verdict: **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**.
+
+- **Git:** `origin/main` `2cb5595ee7a38c85c63223079dc9d17a290ed089`; chain `b51dd31` → `7ad663e` (daily cron + Phase 1/2 evidence) → `eb30f92` (Docker Hub evidence) → `2cb5595` (live verification evidence); clean working tree after that commit.
+- **Backend live:** Vercel `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` READY/production/source CLI, aliases `smart-query-backend.vercel.app` and `smart-query-backend-inforaphicsdigital-8444.vercel.app`. Metadata commit `b51dd31` with dirty CLI working tree; deployed config already contains the daily cron and current main matches. Final schedule `0 0 * * *` for `/api/v1/tickets/escalation/sweep`; live cron list shows exactly that one job, but actual hosted invocation is NOT VERIFIED. Live `/health`, `/api/v1/status`, `/api/v1/status/database` HTTP 200; `/api/v1/departments` HTTP 401 expected.
+- **Frontend live caveat:** Netlify public root and `/api/health` HTTP 200, but authenticated deploy state and source sync NOT VERIFIED (no token; API 401). Live HTML uses Turbopack chunks while current main builds with webpack after `75d6f16`; do not claim the live site matches current main. Deploy `6b02db1360e3188d7f1074c6` cannot be authenticated/confirmed. Owner action: confirm/redeploy from GitHub main. No redeploy was performed.
+- **Database:** `release-v1` read-only — `neondb`, URL fingerprint `5d1fc726d19b`, host fingerprint `141f6064ec7f`, Alembic `feedf21773e1`, 17 public tables, 4 departments, 0 users, 0 tickets, no writes. Branch identity from the operator-provided, git-ignored `backend/.env.release_v1` file name; Vercel sensitive values withheld and Neon UI unavailable, so direct equality and old DB state are NOT VERIFIED.
+- **Image:** Docker Hub `raphicsdigitalsolutions/smart-query-system:latest` / `:v1.0.0` digest `sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177` matching the local image (old `sha256:e9ed708…` is stale). Anonymous pull with a temporary empty Docker config exit 0, anonymous manifest HTTP 200; container smoke healthy, UID 10001, Supervisor backend+frontend RUNNING, 4 HTTP checks 200 with disposable SQLite/no external integrations; no `.env` or key files in image.
+- **Final verification:** backend 229 passed, 17 warnings in 410.30s (0 failed/errors); Vitest 3 passed; lint/typecheck PASS; build PASS (Next.js 16.4.6 webpack, 12/12 pages); Playwright + axe 12 passed in 2.0m; `npm audit` and `npm audit --omit=dev` 0 vulnerabilities; Compose configs and `docker build --check` PASS; Alembic head/current `feedf21773e1`, check clean.
+- **NOT VERIFIED:** Google OAuth, SMTP, Meta WhatsApp, real-user BYOK, hosted cron invocation, university approval, hosted restore/malware scanner, monitoring/retention.

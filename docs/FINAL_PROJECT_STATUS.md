@@ -2,8 +2,10 @@
 
 **Project:** Smart Query Routing & Email Automation System (University Intelligent Communication Hub)  
 **Repository:** `C:\Users\user\OneDrive\Desktop\SmartQuerySystem`  
-**Report Date:** 2026-11-23  
-**Execution Scope:** Autonomous local completion sprint (Phases 1–7). Zero commits, zero pushes, zero production database connections, zero credential rotations/revocations, zero GHCR writes, and zero unapproved major dependency upgrades were performed.
+**Report Date:** 2026-11-23; reconciled 2026-11-24  
+**Execution Scope:** Autonomous local completion sprint (Phases 1–7), followed by publication and live verification of technical release artifacts. The original audit performed zero commits, zero pushes, zero production database connections, zero credential rotations/revocations, zero GHCR writes, and zero unapproved major dependency upgrades; the later release work is recorded in `docs/evidence/phase5_live_verification_2026-11-24.json`.
+
+> **Current verified release status (2026-11-24):** Technical release artifacts are published and verified; formal institutional/governance approval and live provider verification remain open. Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`. Current verdict: **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**.
 
 ---
 
@@ -11,8 +13,8 @@
 
 | Target Environment | Verdict | Evidence Basis |
 | --- | --- | --- |
-| **Local / Offline University & Hackathon Demonstration** | **PASS (READY FOR DEMO)** | Full backend test suite (`225 passed`), Playwright E2E + Axe accessibility suite (`11 passed in 1.2m`, 0 serious/critical WCAG violations), Vitest unit tests (`3 passed`), TypeScript (`tsc --noEmit` exit 0), ESLint (`eslint .` exit 0, 0 errors, 0 warnings), Next.js production build (`13/13` static pages), local demo smoke test (`scripts/start_local_demo.ps1 -SmokeTest` all 5 health/BFF endpoints HTTP 200 + clean PID shutdown), disposable PostgreSQL backup/restore rehearsal (`PASS`), and local ClamAV integration (`PASS_LOCAL_INTEGRATION_ONLY`). |
-| **Public Production Release** | **FAIL — DO NOT DEPLOY** | Blocked by external/operator and institutional governance requirements that cannot be falsified locally: (1) owner review/rotation of 4 local `.env` credential candidates and staged BYOK Fernet key rotation, (2) owner approval for semver-major upgrades (`next@16.4.6`, `zod@4.6.7`, `vitest@4.1.12`) to clear 6 `npm audit` package findings, (3) live external provider verification (Google OAuth2, SMTP, Meta WhatsApp, live user BYOK), (4) hosted FR-07 cron execution verification, (5) target-host restore & deployed malware scanner, (6) `write:packages` token to publish current local changes to GHCR, and (7) signed university supervisor approval of architectural/tooling deviations. |
+| **Local / Offline University & Hackathon Demonstration** | **PASS (READY FOR DEMO)** | Final backend suite (`229 passed, 17 warnings in 410.30s`, 0 failed/errors), Playwright + Axe (`12 passed in 2.0m`, 0 serious/critical WCAG violations), Vitest (`3 passed`), lint/typecheck PASS, Next.js 16.4.6 webpack build (`12/12` pages), Compose configs and `docker build --check` PASS, local demo smoke test (5 health/BFF endpoints HTTP 200 + clean PID shutdown), disposable PostgreSQL backup/restore rehearsal (`PASS`), and local ClamAV integration (`PASS_LOCAL_INTEGRATION_ONLY`). |
+| **Public Production Release** | **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING** (historical FAIL superseded) | Technical artifacts are published and verified (`docs/evidence/phase5_live_verification_2026-11-24.json`): `origin/main` `2cb5595`, Vercel deployment `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` READY with the daily cron schedule, Docker Hub image anonymously pull-verified, 0 npm vulnerabilities. Still open: (1) owner review/rotation of 4 local credential candidates and staged BYOK Fernet key rotation, (2) live provider verification (Google OAuth2, SMTP, Meta WhatsApp, real-user BYOK), (3) hosted cron invocation verification (schedule exists), (4) target-host restore & deployed malware scanner, monitoring/retention, (5) Netlify source-sync confirmation/redeploy from main, (6) GHCR `write:packages` publication, and (7) signed university supervisor approval of architectural/tooling deviations. |
 
 ---
 
@@ -20,16 +22,16 @@
 
 ### Phase 1 — Safe Workspace Check
 - Inspected Git status, diff statistics, and all release governance documents (`docs/FINAL_RELEASE_BLOCKERS.md`, `docs/OPERATOR_ACTION_CHECKLIST.md`, `docs/AUTHORITATIVE_COMPLETION_MATRIX.md`, `docs/RELEASE_READINESS.md`, `docs/SECRET_AUDIT_REMEDIATION_PLAN.md`).
-- Preserved all 39 modified tracked files and all untracked working-tree files.
+- Preserved all 39 modified tracked files and all untracked working-tree files (historical Phase 1 state; current `origin/main` is `2cb5595` with a clean working tree).
 - Created recovery backups in `scratch/` before modifying `frontend-next/e2e/auth.spec.ts`, `backend/tests/conftest.py`, `docs/evidence/backup_restore_rehearsal.json`, and `docs/evidence/ghcr_readonly_investigation.json`.
 
 ### Phase 2 — Security & Secret Remediation
-- **Dependency Audit (`npm audit`):** Investigated all 6 vulnerable packages across 10 GHSA advisories (`docs/evidence/npm_audit_summary.json`, `docs/evidence/npm_audit_full_2026-11-23.json`, `docs/evidence/npm_audit_prod_2026-11-23.json`):
+- **Dependency Audit (`npm audit`, 2026-11-23 historical):** Investigated all 6 vulnerable packages across 10 GHSA advisories (`docs/evidence/npm_audit_summary.json`, `docs/evidence/npm_audit_full_2026-11-23.json`, `docs/evidence/npm_audit_prod_2026-11-23.json`):
   - Production dependencies (3): `next@15.5.29` (moderate, via nested `postcss`), `postcss@8.4.31` (high, nested under `node_modules/next/node_modules/postcss`; root `postcss@8.5.33` is clean), and `zod@3.25.76` (high).
   - Dev-only test toolchain dependencies (3, omitted by `npm ci --omit=dev` in the production Docker runner): `vitest@3.2.4` (critical), `@vitest/mocker@3.2.4` (moderate), and `tinypool@1.1.1` (critical).
-  - Every fix requires a semver-major upgrade (`next@16.4.6`, `zod@4.6.7`, `vitest@4.1.12`). Per project restrictions ("Do not perform major upgrades without approval"), no major upgrade was auto-applied; exact upgrade and verification commands are documented in `docs/MY_REQUIRED_ACTIONS.md` §A2 and `docs/OPERATOR_ACTION_CHECKLIST.md` §3.
+  - Every fix requires a semver-major upgrade (`next@16.4.6`, `zod@4.6.7`, `vitest@4.1.12`). Per project restrictions ("Do not perform major upgrades without approval"), no major upgrade was auto-applied at that time; the upgrades were applied and verified on 2026-11-24 (§5), and the historical commands are documented in `docs/MY_REQUIRED_ACTIONS.md` §A2 and `docs/OPERATOR_ACTION_CHECKLIST.md` §3.
 - **Secret Audit (`scripts/secret_audit.py`):**
-  - Verified classification across 307 tracked files, workspace files, reachable Git history (`6f388d0`), and 3 container images (`docs/evidence/secret_audit.json`).
+  - Verified classification across 385 tracked files, workspace files, reachable Git history (`6f388d0`), and 3 container images (`docs/evidence/secret_audit.json`).
   - Confirmed 4 actual-secret candidates in unignored local files by 12-char SHA-256 fingerprint only (`DATABASE_URL` `c1271fe222ae`, `OPENAI_API_KEY` `089ee82c29af`, `BYOK_ENCRYPTION_KEY` `f70b8084e710` in `backend/.env`; `VERCEL_OIDC_TOKEN` `3e0e10366f60` in `backend/.env.local`).
   - Confirmed 0 secret values were printed, logged, rotated, or revoked, and verified that our newly created demo and documentation files introduced **0** new potential-secret findings (`workspace_potential_secrets` remains `16`).
 
@@ -41,7 +43,7 @@ All 14 functional requirements and security controls were inspected and verified
 - **FR-04 & FR-04b (Department & Leave-Aware Instructor Auto-Routing):** Deterministic keyword routing (`app/services/auto_routing.py`) paired with deterministic staff-only workload selection (`app/services/instructor_routing.py`, rule `least_open_workload_then_full_name_then_id`), excluding inactive staff, staff on active leave windows, and HOD/admin roles.
 - **FR-05 (Grounded AI Drafts & Human Approval Gate):** Approved-knowledge retrieval (`app/services/knowledge.py`), citation validation, abstention when no approved source matches, and explicit staff approval gate (`POST /api/v1/ai/tickets/{id}/approve-draft`) before any message becomes public.
 - **FR-06 (Student Status Tracking & Polling):** Ticket timeline UI, conditional snapshot endpoint (`GET /api/v1/tickets/{id}/updates` with `ETag` and `304 Not Modified`), and `useTicketStatusPolling` hook (verified by Vitest and Playwright E2E). Documented honestly as conditional polling, not WebSockets/SSE.
-- **FR-07 (24-Hour SLA Auto-Escalation):** Repeat-safe deterministic sweep (`app/services/escalation.py`), admin trigger (`POST /api/v1/tickets/escalation/run`), constant-time secret-protected serverless cron trigger (`POST /api/v1/tickets/escalation/sweep`), and hourly `backend/vercel.json` schedule (`tests/test_escalation.py`, `tests/test_escalation_serverless.py`).
+- **FR-07 (24-Hour SLA Auto-Escalation):** Repeat-safe deterministic sweep (`app/services/escalation.py`), admin trigger (`POST /api/v1/tickets/escalation/run`), constant-time secret-protected serverless cron trigger (`POST /api/v1/tickets/escalation/sweep`), and the final daily `backend/vercel.json` schedule `0 0 * * *` (`tests/test_escalation.py`, `tests/test_escalation_serverless.py`). The live cron list confirms the schedule; hosted invocation is **NOT VERIFIED**.
 - **FR-08 (Notifications & Deduplication):** In-app notifications, SMTP service (`app/services/email.py`), Meta WhatsApp service (`app/services/whatsapp.py`), 10-minute idempotency deduplication window, internal-note/unapproved-draft suppression, and sanitized error summaries (`safe_exception_summary`).
 - **FR-09 to FR-12 (HOD Override, Analytics, Broadcast Announcements, PDF/Excel Reports):** Verified by `test_tickets.py`, `test_analytics.py`, `test_announcements.py`, and `test_reports.py`.
 - **FR-13 (Instructor Leave & Auto-Reply):** Leave CRUD (`app/services/leave.py`), automatic routing exclusion during active leave windows, and automatic public absence reply when manually assigned (`test_leave.py`, `test_instructor_routing.py`).
@@ -67,15 +69,15 @@ All 14 functional requirements and security controls were inspected and verified
 
 | Verification Gate | Command Executed | Result | Details |
 | --- | --- | --- | --- |
-| **Full Backend Test Suite** | `cd backend; .\.venv\Scripts\python.exe -m pytest -q` | **PASS** | **`225 passed, 17 warnings in 311.49s (0:05:11)`** (isolated in-memory SQLite; `os.environ["DEBUG"] = "false"` added in `conftest.py` to prevent host `DEBUG=release` env collision without altering any test assertion or coverage). |
+| **Full Backend Test Suite** | `cd backend; .\.venv\Scripts\python.exe -m pytest -q` | **PASS** | **Final: `229 passed, 17 warnings in 410.30s (0:06:50)`, 0 failed/errors** (isolated in-memory SQLite; `os.environ["DEBUG"] = "false"` added in `conftest.py` to prevent host `DEBUG=release` env collision without altering any test assertion or coverage). Earlier `225 passed` runs are historical. |
 | **Frontend TypeScript Check** | `cd frontend-next; npm run typecheck` | **PASS** | `tsc --noEmit` exited `0`. |
 | **Frontend ESLint** | `cd frontend-next; npm run lint` | **PASS** | `eslint .` exited `0` with **0 errors and 0 warnings** (after removing unused `E2E_PASSWORD` import from `frontend-next/e2e/auth.spec.ts`; all 5 auth E2E tests preserved unchanged). |
 | **Frontend Unit Tests (Vitest)** | `cd frontend-next; npm run test` | **PASS** | `1 passed (1)` test file, `3 passed (3)` tests in `src/hooks/useTicketStatusPolling.test.tsx`. |
-| **Frontend Production Build** | `cd frontend-next; npm run build` | **PASS** | Next.js 15.5.29 compiled in `15.9s`; `13/13` static/dynamic App Router pages generated. |
-| **Playwright E2E & Axe Accessibility Suite** | `cd frontend-next; npx playwright test` | **PASS** | **`11 passed (1.2m)`** across `e2e/a11y.spec.ts` (3 WCAG 2.0/2.1 A/AA Axe scans with 0 serious/critical violations), `e2e/auth.spec.ts` (5 auth/RBAC tests), and `e2e/tickets.spec.ts` (3 submission, live ETag polling, and 404 isolation tests). |
+| **Frontend Production Build** | `cd frontend-next; npm run build` | **PASS** | Next.js 16.4.6 with `--webpack` compiled cleanly; `12/12` static/dynamic App Router pages generated. |
+| **Playwright E2E & Axe Accessibility Suite** | `cd frontend-next; npx playwright test` | **PASS** | **Final: `12 passed (2.0m)`** with 0 serious/critical WCAG violations on login, student workspace and ticket detail; specs cover accessibility, auth/RBAC, submission, ETag polling, escalation history/notifications and 404 isolation. |
 | **Local Demo Smoke Test** | `powershell -ExecutionPolicy Bypass -File .\scripts\start_local_demo.ps1 -SmokeTest -ApiPort 8120 -FrontendPort 3120` | **PASS** | Verified `/health` (HTTP 200), `/api/v1/status` (HTTP 200), `/api/v1/status/database` (HTTP 200 `connected`), `/api/health` BFF proxy (HTTP 200 `healthy`), and `/login` UI (HTTP 200), followed by clean teardown of demo PIDs. |
 | **Evidence JSON Validation** | Python `json.loads` across `docs/evidence/*.json` | **PASS** | All 9 JSON evidence files validated as strict RFC 8259 UTF-8 JSON (UTF-8 BOM stripped from `backup_restore_rehearsal.json` and `ghcr_readonly_investigation.json` with backups in `scratch/`). |
-| **Redacted Secret Audit** | `python scripts/secret_audit.py` | **PASS** | Scanned 307 tracked files, workspace, Git history, and 3 Docker images; 0 new potential secrets introduced by sprint files; no secret values printed. |
+| **Redacted Secret Audit** | `python scripts/secret_audit.py` | **PASS** | Scanned 385 tracked files, workspace, Git history, and 3 Docker images; 0 new potential secrets introduced by sprint files; no secret values printed. |
 | **Git Whitespace / Conflict Check** | `git diff --check` | **PASS** | Exited `0` with no conflict markers or whitespace errors. |
 
 ---
@@ -96,3 +98,16 @@ All 14 functional requirements and security controls were inspected and verified
 - `frontend-next/e2e/auth.spec.ts` — Removed unused `E2E_PASSWORD` import on line 2 to resolve the single ESLint warning (`scratch/auth.spec.ts.bak`). All 5 authentication E2E test cases are untouched.
 - `docs/evidence/backup_restore_rehearsal.json` & `docs/evidence/ghcr_readonly_investigation.json` — Stripped leading 3-byte UTF-8 BOM so strict UTF-8 JSON parsers validate all 9 evidence files (`scratch/*.bak`).
 - `docs/evidence/secret_audit.json` — Refreshed timestamp via `python scripts/secret_audit.py` confirming identical finding counts.
+
+---
+
+## 5. Final release reconciliation (2026-11-24)
+
+Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`. Current verdict: **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**.
+
+- **Git:** `origin/main` is `2cb5595ee7a38c85c63223079dc9d17a290ed089`; chain `b51dd31` → `7ad663e` (daily cron + Phase 1/2 evidence) → `eb30f92` (Docker Hub evidence) → `2cb5595` (live verification evidence); clean working tree after that commit.
+- **Backend live:** Vercel deployment `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM`, READY/production/source CLI; aliases `smart-query-backend.vercel.app` and `smart-query-backend-inforaphicsdigital-8444.vercel.app`. Metadata commit `b51dd31` with dirty CLI tree; deployed config already has the daily cron and current main matches. `0 0 * * *` is the final schedule; Hobby allows at most once/day. Live cron list shows exactly one job; invocation NOT VERIFIED. `/health`, `/api/v1/status`, `/api/v1/status/database` HTTP 200; `/api/v1/departments` HTTP 401 expected.
+- **Frontend live caveat:** Netlify public root and `/api/health` HTTP 200, but authenticated deploy state and source sync NOT VERIFIED (no token; API 401). Live HTML uses Turbopack chunks while current main builds with webpack after `75d6f16`; do not claim live site matches main. Deploy `6b02db1360e3188d7f1074c6` is unconfirmed; owner should confirm/redeploy from GitHub main. No redeploy performed.
+- **Database:** `release-v1` read-only verification — `neondb`, URL fingerprint `5d1fc726d19b`, host fingerprint `141f6064ec7f`, Alembic `feedf21773e1`, 17 public tables, 4 departments, 0 users, 0 tickets, no writes. Branch identity comes from the operator-provided, git-ignored `backend/.env.release_v1` file name; hosted equality and old DB state NOT VERIFIED.
+- **Image:** Docker Hub `raphicsdigitalsolutions/smart-query-system:latest` / `:v1.0.0` digest `sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177` (stale `sha256:e9ed708…` replaced); anonymous pull exit 0 with empty Docker config, manifest HTTP 200; container smoke healthy, UID 10001, Supervisor backend+frontend RUNNING, 4 HTTP checks 200 with disposable SQLite/no external integrations, no `.env` or key files in image.
+- **NOT VERIFIED:** Google OAuth, SMTP, Meta WhatsApp, real-user BYOK, hosted cron invocation, university approval, hosted restore/malware scanner, monitoring/retention.

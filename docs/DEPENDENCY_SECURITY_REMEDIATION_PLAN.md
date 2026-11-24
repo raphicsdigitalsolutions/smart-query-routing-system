@@ -4,11 +4,13 @@
 **Remediation Completed:** 2026-11-24 — Option B executed locally across all 3 stages (`vitest@4.1.12` + `vite@^7.3.8` + `@testing-library/dom@^10.4.2`, `zod@4.6.7`, and `next@16.4.6` + `eslint-config-next@16.4.6` with `--webpack` build script). Post-remediation `npm audit` and `npm audit --omit=dev` both report **0 vulnerabilities**. Historical pre-remediation audit notes remain below for traceability.  
 **Machine-Readable Evidence:** [dependency_remediation_audit.json](file:///C:/Users/user/OneDrive/Desktop/SmartQuerySystem/docs/evidence/dependency_remediation_audit.json), [npm_audit_post_remediation.json](file:///C:/Users/user/OneDrive/Desktop/SmartQuerySystem/docs/evidence/npm_audit_post_remediation.json), [npm_audit_post_remediation_prod.json](file:///C:/Users/user/OneDrive/Desktop/SmartQuerySystem/docs/evidence/npm_audit_post_remediation_prod.json)
 
+**Current release verdict:** **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**; authoritative release status: `docs/evidence/phase5_live_verification_2026-11-24.json`.
+
 ---
 
 ## 1. Executive Summary
 
-A live, read-only audit of all workspace JavaScript manifests confirms that **all 6 vulnerabilities** previously flagged in [npm_audit_summary.json](file:///C:/Users/user/OneDrive/Desktop/SmartQuerySystem/docs/evidence/npm_audit_summary.json) **still exist** in [frontend-next/package.json](file:///C:/Users/user/OneDrive/Desktop/SmartQuerySystem/frontend-next/package.json):
+The 2026-11-23 read-only audit found **all 6 vulnerabilities** previously flagged in [npm_audit_summary.json](file:///C:/Users/user/OneDrive/Desktop/SmartQuerySystem/docs/evidence/npm_audit_summary.json) in [frontend-next/package.json](file:///C:/Users/user/OneDrive/Desktop/SmartQuerySystem/frontend-next/package.json). These findings are **historical**: all were remediated on 2026-11-24 as recorded at the top of this document. The inventory below is retained for traceability only:
 
 - **Total vulnerabilities (`npm audit` in `frontend-next/`):** **6 vulnerabilities** (**2 Moderate, 2 High, 2 Critical**) spanning **10 unique GHSA advisories**.
 - **Production-scope vulnerabilities (`npm audit --omit=dev` in `frontend-next/`):** **3 vulnerabilities** (**1 Moderate, 2 High, 0 Critical**): `next`, nested `postcss` (under `next`), and `zod`.
@@ -24,7 +26,7 @@ A live, read-only audit of all workspace JavaScript manifests confirms that **al
 
 ---
 
-## 2. Verified Current Vulnerability Inventory
+## 2. Verified 2026-11-23 Vulnerability Inventory (historical; remediated 2026-11-24)
 
 All counts were re-verified directly against live lockfiles on Node `v22.23.2` / npm `10.9.0`:
 
@@ -52,7 +54,7 @@ All counts were re-verified directly against live lockfiles on Node `v22.23.2` /
      - [register/route.ts](file:///C:/Users/user/OneDrive/Desktop/SmartQuerySystem/frontend-next/src/app/api/auth/register/route.ts): four bounded strings (`max(128)`/`max(255)`/`email()`).
      - [google/route.ts](file:///C:/Users/user/OneDrive/Desktop/SmartQuerySystem/frontend-next/src/app/api/auth/google/route.ts): single bounded string (`min(10).max(20000)`).
 2. **`postcss@8.4.31` via `next@15.5.29` (High / CVSS 7.5 — actual app risk: Low-to-Moderate):**
-   - Processes static application stylesheets at build/compile time rather than user-supplied CSS at runtime. However, `next` and `postcss` both fail `npm audit --omit=dev`, so CI/supply-chain scanners will keep flagging production builds until `next` moves to `16.4.6+`.
+   - Processes static application stylesheets at build/compile time rather than user-supplied CSS at runtime. At the 2026-11-23 audit, `next` and `postcss` both failed `npm audit --omit=dev`, so CI/supply-chain scanners would have kept flagging production builds until `next` moved to `16.4.6+`; that upgrade is now completed and both audits report 0 vulnerabilities.
 
 ### Development & CI Build Scope (`vitest`, `@vitest/mocker`, `tinypool`)
 1. **`vitest@3.2.4` / `@vitest/mocker@3.2.4` / `tinypool@1.1.1` (Critical — actual deployed runtime risk: None; local/CI dev risk: Moderate-to-High if exposed):**
@@ -69,7 +71,7 @@ All counts were re-verified directly against live lockfiles on Node `v22.23.2` /
 - **Security Outcome:**
   - Patches `GHSA-5xrq-8626-4rwp` (Critical on `vitest`).
   - **Leaves 6/6 packages and 9/10 GHSAs unresolved:** `GHSA-82fw-gwwq-j7x9` on `vitest` (`<4.1.11`), both advisories on `@vitest/mocker` (`<4.1.12`), both critical advisories on `tinypool` (`<2.1.2`), `zod` (`<4.6.6`), and `next` + nested `postcss`.
-- **Verdict:** **Insufficient** as a final state (still fails both `npm audit` and `npm audit --omit=dev`), useful only as a stopgap before scheduling Option B.
+- **Verdict (historical assessment):** **Insufficient** as a final state at audit time (it would have failed both `npm audit` and `npm audit --omit=dev`), useful only as a stopgap before Option B. Option B was completed on 2026-11-24; both audits now report 0 vulnerabilities.
 
 ---
 
@@ -162,6 +164,6 @@ After each phase (and cumulatively after Phase 3), execute and record evidence f
 
 ## 7. Remaining Risks & Limitations
 
-- **Unpatched until approved:** All 6 vulnerabilities in `frontend-next` remain active in the workspace right now because this audit strictly preserved `package.json`, `package-lock.json`, and all source files.
+- **Historical unpatched state (2026-11-23):** At audit time all 6 vulnerabilities in `frontend-next` were active because that audit strictly preserved `package.json`, `package-lock.json`, and all source files. They were remediated on 2026-11-24; no finding remains active.
 - **Registry reachability in offline/sandboxed environments:** `npm audit` / `npm view` network calls fail with `ENOTFOUND registry.npmjs.org` when offline or sandboxed without registry access; remediation installation must run in an environment with npm registry connectivity (or mirrored internal registry).
 - **Docker Node 20 base pin:** Moving `vitest` to `5.x` in the future requires upgrading `node:20-alpine` in [frontend-next/Dockerfile](file:///C:/Users/user/OneDrive/Desktop/SmartQuerySystem/frontend-next/Dockerfile) to Node `>=22.12.0` (`node:22-alpine`). Sticking with `vitest@4.1.12` avoids a forced Node base bump while eliminating every Vitest-tree CVE.

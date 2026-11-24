@@ -1,23 +1,34 @@
 # Final University Submission Checklist
 
 **Verification Date:** 2026-11-24  
-**Repository State:** Uncommitted local completion workspace (preserving all user work; no commit/push/deploy executed).
+**Repository State:** `origin/main` `2cb5595ee7a38c85c63223079dc9d17a290ed089` (`b51dd31` → `7ad663e` → `eb30f92` → `2cb5595`), clean working tree after the final commit.  
+**Status:** **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING** — live demonstration and published artifacts verified; formal institutional sign-off and live provider verification not verified.
 
 ## 1. Engineering & Verification Gates
 
-- [x] **Frontend Dependency Security (`npm audit` & `--omit=dev`):** **0 vulnerabilities** (`next@16.4.6`, `zod@4.6.7`, `vitest@4.1.12`, `eslint-config-next@16.4.6`; `frontend/` also 0 vulnerabilities).
-- [x] **Backend Automated Suite:** **229 passed** (`pytest -q`, `DEBUG=false`).
-- [x] **Backend Compile & Alembic Migration Head:** `compileall` clean; head `feedf21773e1` verified in full PostgreSQL upgrade chain.
+- [x] **Frontend Dependency Security (`npm audit` & `--omit=dev`):** **0 vulnerabilities** (`next@16.4.6`, `zod@4.6.7`, `vitest@4.1.12`, `eslint-config-next@16.4.6`; `frontend/` also 0 vulnerabilities). Evidence: `docs/evidence/npm_audit_final_2026-11-24.json`, `npm_audit_prod_final_2026-11-24.json`.
+- [x] **Backend Automated Suite:** **229 passed, 17 warnings in 410.30s (0:06:50)** (`pytest -q`, `DEBUG=false`), 0 failed/errors (`docs/evidence/final_backend_test.json`).
+- [x] **Backend Compile & Alembic Migration Head:** `compileall` clean; heads/current `feedf21773e1`, `alembic check` clean.
 - [x] **Frontend TypeScript, ESLint 9 & Vitest:** `tsc --noEmit` (0 errors), `eslint .` (0 errors/warnings), Vitest (`3 passed`).
-- [x] **Frontend Production Build:** `next build --webpack` cleanly compiles all routes (Turbopack failure on Windows/OneDrive documented).
-- [x] **Playwright & Axe Accessibility E2E:** **12 passed** (`auth.spec.ts`, `tickets.spec.ts`, `a11y.spec.ts` — 0 serious/critical violations).
-- [x] **Disposable PostgreSQL Backup & Restore:** `scripts/backup_restore_rehearsal.ps1` → **PASS**.
-- [x] **Docker Packaging & Compose Validation:** `docker-compose.db.yml` and `docker-compose.yml` valid; `smartquery-backend:submission-audit`, `smartquery-frontend:submission-audit`, and the unified Supervisor `Dockerfile` (`raphicsdigitalsolutions/smart-query-system:latest` / `:v1.0.0`, digest `sha256:e9ed70810b3f9e5c6bb5ee1e7fb83847acb423c18a2bb506d9e83a5368450430`) built, smoke-tested, and anonymously pull-verified on Docker Hub.
+- [x] **Frontend Production Build:** `next build --webpack` (Next.js 16.4.6) PASS with 12/12 static pages (Turbopack failure on Windows/OneDrive documented).
+- [x] **Playwright & Axe Accessibility E2E:** **12 passed in 2.0m** (`auth.spec.ts`, `tickets.spec.ts`, `a11y.spec.ts` — 0 serious/critical violations; `docs/evidence/e2e_axe_result.json`).
+- [x] **Disposable PostgreSQL Backup & Restore:** `scripts/backup_restore_rehearsal.ps1` → **PASS** (local disposable only; hosted restore not verified).
+- [x] **Docker Packaging & Compose Validation:** `docker-compose.db.yml` and `docker-compose.yml` `config --quiet` PASS; `docker build --check .` no warnings; `smartquery-backend:submission-audit`, `smartquery-frontend:submission-audit`, and the unified Supervisor `Dockerfile` (`raphicsdigitalsolutions/smart-query-system:latest` / `:v1.0.0`, both digest `sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177`) built, smoke-tested (healthy, UID 10001, Supervisor backend+frontend RUNNING, backend health/login/api-health/session HTTP 200), and anonymously pull-verified on Docker Hub (empty config exit 0; manifest HTTP 200). The older `sha256:e9ed70810b3f9e5c6bb5ee1e7fb83847acb423c18a2bb506d9e83a5368450430` is stale.
+- [x] **Vercel Backend Deployment & Live Smoke:** deployment `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` READY (production, CLI source); `/health` 200 healthy, `/api/v1/status` 200 version 1.0.0, `/api/v1/status/database` 200 connected, `/api/v1/departments` 401 (expected). Exactly one daily `0 0 * * *` cron for `/api/v1/tickets/escalation/sweep`; current main matches deployed config. **Invocation NOT VERIFIED.**
+- [x] **Netlify Public HTTP Check:** `https://smart-query-routing-system.netlify.app` `/` and `/api/health` both HTTP 200 (`Server: Netlify`). Authenticated deploy state and source sync NOT VERIFIED (see §2).
+- [x] **`release-v1` Database Read-Only Verification:** `neondb`, URL fingerprint `sha256_12 5d1fc726d19b`, host fingerprint `141f6064ec7f`, Alembic `feedf21773e1`, 17 public tables, `departments=4`, `users=0`, `tickets=0`, `writes_performed=false` (`docs/evidence/release_v1_readonly_verification_2026-11-24.json`).
 - [x] **Submission Package Hygiene:** `submission/SmartQuerySystem_Final_Submission/` and `.zip` exclude `.env`, `.env.local`, `.venv`, `node_modules`, `.next`, `.e2e`, caches, and real DB dumps.
+
+**Final evidence:** `docs/evidence/phase1_release_audit_2026-11-24.json`, `phase2_quality_verification_2026-11-24.json`, `phase4_docker_hub_release_2026-11-24.json`, `phase5_live_verification_2026-11-24.json`, `release_v1_readonly_verification_2026-11-24.json`, `docker_hub_anonymous_pull_2026-11-24.json`, `final_backend_test.json`, `e2e_axe_result.json`, `npm_audit_final_2026-11-24.json`, `npm_audit_prod_final_2026-11-24.json`.
 
 ## 2. Explicit Pre-Production / Governance Items (Disclosed Honestly)
 
-- [ ] **Owner Secret Review / Rotation:** 4 current-local fingerprint matches (`OPENAI_API_KEY`, `BYOK_ENCRYPTION_KEY`, `VERCEL_OIDC_TOKEN`, `DATABASE_URL`) in `docs/evidence/secret_audit.json` remain unrotated pending owner action.
-- [ ] **Live External Providers:** Real Google OAuth2 client ID/origin, SMTP credentials, Meta WhatsApp Cloud API credentials, live user OpenAI BYOK test, and hosted Vercel FR-07 cron (`ESCALATION_CRON_SECRET`) are blocked without production operator credentials.
-- [ ] **GHCR New Image Push:** Existing `:latest` pull verified read-only (`sha256:417e...a2b0f0f`), but publishing current workspace changes requires `write:packages`.
+- [ ] **Formal institutional/governance approval:** no university sign-off or formal production release approval; **LIVE DEMONSTRATION; FORMAL SIGN-OFF NOT VERIFIED**.
+- [ ] **Owner Secret Review / Rotation:** 4 historical current-local fingerprint matches (`OPENAI_API_KEY`, `BYOK_ENCRYPTION_KEY`, `VERCEL_OIDC_TOKEN`, `DATABASE_URL`) in `docs/evidence/secret_audit.json` remain unrotated pending owner action.
+- [ ] **Live External Providers:** Real Google OAuth2 client ID/origin, SMTP credentials, Meta WhatsApp Cloud API credentials, and live user OpenAI BYOK test are NOT VERIFIED without production operator credentials.
+- [ ] **Hosted cron invocation:** only the daily schedule is verified; actual invocation/escalation effect and hosted `ESCALATION_CRON_SECRET` configuration are NOT VERIFIED.
+- [ ] **Netlify owner action:** API returned 401 without a token, deploy ID `6b02db1360e3188d7f1074c6` could not be authenticated, and live HTML uses Turbopack chunks while current main builds with webpack after `75d6f16`. Owner must confirm the deploy and redeploy from GitHub `main` if needed; no redeploy was performed.
+- [ ] **Database identity confirmation:** `release-v1` verification used the git-ignored `backend/.env.release_v1` filename only; Vercel withholds `DATABASE_URL` and Neon UI was unavailable. Direct Vercel-to-`.env` equality and old production database state are NOT claimed.
+- [ ] **GHCR New Image Push (optional):** historical `:latest` pull verified read-only (`sha256:417e...a2b0f0f`), but publishing current workspace changes requires `write:packages`. Docker Hub publication is already complete and verified.
+- [ ] **Hosted operations:** hosted restore, malware scanner, monitoring, and retention are NOT VERIFIED.
 - [ ] **University Supervisor / Scope Deviation Sign-Off:** Formal acknowledgement from supervisor Saima Jamil / VU for tool substitutions (OpenAI BYOK vs. Gemini/Claude, FastAPI vs. n8n/Sheets, Meta adapter vs. Baileys) and zero-cost policy disclosure.

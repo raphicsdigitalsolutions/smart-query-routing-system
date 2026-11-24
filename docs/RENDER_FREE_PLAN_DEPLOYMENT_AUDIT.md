@@ -1,5 +1,7 @@
 # Render FREE-Plan Deployment Audit — Smart Query Routing System
 
+> **Historical analysis note:** This document records the 2026-11-22 Render Free-plan feasibility audit. Its FAIL verdicts are historical platform-fit findings, **not** the current release decision. The current verified release status is in `docs/evidence/phase5_live_verification_2026-11-24.json`: technical release artifacts are published and verified; formal institutional/governance approval and live provider verification remain open. Current verdict: **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**.
+
 **Date:** 2026-11-22  
 **Revision:** Correction pass — accounts for the existing external Neon PostgreSQL project.  
 **Scope:** Read-only audit of the current `main` branch (`6f388d0`) for deployment of the existing FastAPI backend to Render's Free web-service plan, using the already-created Neon PostgreSQL database. No deployment, push, credential change, database change, or GitHub modification was performed.
@@ -10,19 +12,19 @@
 
 | Target | Verdict |
 | --- | --- |
-| **Production / public release** | **FAIL — DO NOT DEPLOY** (unchanged) |
+| **Production / public release (historical 2026-11-22 finding)** | **FAIL — DO NOT DEPLOY at the time of this audit** — superseded; see the historical analysis note above for current status |
 | **Private, limited university demo on Render Free + Neon** | **CONDITIONAL PASS**, with accepted feature degradations listed in §11 |
 | Local/offline demonstration | **CONDITIONAL PASS** (unchanged) |
 
 **Correction to the previous revision:** the earlier "Free Postgres expires after 30 days" blocker is **withdrawn**. That limitation applies only to Render's own Free Postgres offering. This architecture uses an **external Neon PostgreSQL** project, so Render's 30-day expiry, 1 GB Render-Postgres cap and Render-Postgres backup limitations are **not applicable**.
 
-Remaining reasons production is still FAIL are: Render Free's SMTP port block, ephemeral local disk for attachments, 15-minute spin-down (which breaks scheduled SLA escalation and adds ~1 minute wake latency), unverified 0.1 CPU / 512 MB headroom, and the still-unclosed release prerequisites (secret rotations, live provider verification, scope sign-off, deployment approval). None of these are fixed by Neon.
+Historical reasons this specific Render Free plan remained FAIL at the time of the audit are: Render Free's SMTP port block, ephemeral local disk for attachments, 15-minute spin-down (which breaks scheduled SLA escalation and adds ~1 minute wake latency), unverified 0.1 CPU / 512 MB headroom, and the then-unclosed release prerequisites (secret rotations, live provider verification, scope sign-off, deployment approval). The final deployment used Vercel + Netlify + Neon, not Render; see the historical analysis note above and current status in `docs/evidence/phase5_live_verification_2026-11-24.json`.
 
 This audit does **not** override earlier release decisions:
 
 | Prior decision | Status |
 | --- | --- |
-| Production/public release | **FAIL — do not deploy** (unchanged) |
+| Production/public release | **FAIL at the time of this 2026-11-22 audit** (historical; superseded by current verified status) |
 | Local/offline demonstration | **CONDITIONAL PASS** (unchanged) |
 | OpenAI BYOK only; no global production fallback | Retained |
 | Both `frontend/` and `frontend-next/` retained | Retained |
@@ -54,7 +56,7 @@ This audit does **not** override earlier release decisions:
 | `backend/app/services/escalation.py` | Deterministic 24-hour SLA sweep, invoked only by the in-process async worker. |
 | `docker-compose.yml` | Authoritative topology: backend context `./backend`, named volume `smartquery_attachments_data` at `/app/var/attachments`, external Postgres volume, `RUN_MIGRATIONS=true` default, full env-var contract. |
 | `backend/.env.example`, `.env.example` | Env-var inventory and secret-placement policy. |
-| `docs/RELEASE_READINESS.md` | Source of preserved production FAIL / local CONDITIONAL PASS decisions. |
+| `docs/RELEASE_READINESS.md` | Historical source of the 2026-11-22 production FAIL / local CONDITIONAL PASS decisions (superseded by the current status above). |
 | `docs/CLOUDFLARE_ZERO_BUDGET_FEASIBILITY.md` | Prior completed audit; left unchanged. |
 | Git state | `origin` = `https://github.com/raphicsdigitalsolutions/smart-query-routing-system.git`; branch `main` at `6f388d0`. |
 
@@ -182,7 +184,7 @@ Inject these in the Render Dashboard/secret manager. **Do not commit them and do
 1. **Resource fit is unverified.** Free = 0.1 CPU / 512 MB RAM. The image installs `langgraph==1.2.24`, `langchain-core==1.8.4`, `cryptography`, `psycopg[binary]`, `pypdf`, `reportlab` and `openpyxl`. `pip` installs under 512 MB can be slow or OOM, and Free build minutes are limited. Render publishes no memory guarantee for this dependency set, so runtime fit is **UNKNOWN**, not PASS. See §9.
 2. **Migrations at every start.** `RUN_MIGRATIONS=true` runs `alembic upgrade head` before uvicorn. Each Free restart/spin-down repeats it. If Neon is unreachable (e.g. compute resuming or allowances exhausted), startup blocks and `/health` never passes, so Render marks the deploy failed. Use the direct-string option in §4.2 if possible.
 3. **`/health` is liveness only.** It deliberately does not touch Neon or providers. Render will report "healthy" even if the database, email, attachments, or AI path is broken.
-4. **Production config fails closed.** Missing/placeholder secrets, missing TLS DB URL, wildcard/localhost CORS, or `ALLOW_GLOBAL_OPENAI_FALLBACK=true` prevent startup. Operator rotations are still pending.
+4. **Production config fails closed.** Missing/placeholder secrets, missing TLS DB URL, wildcard/localhost CORS, or `ALLOW_GLOBAL_OPENAI_FALLBACK=true` prevent startup. Operator rotations were pending at audit time.
 5. **SLA worker vs. spin-down.** See §7 — this is a functional limitation, not just a delay.
 6. **Database is now external (corrected).** Neon removes Render Postgres's 30-day expiry and Render-side maintenance risk. Residual Neon Free caveats in §4.3 (1 GB, CU-hours, no scheduled backups, scale-to-zero) apply.
 7. **Port detection.** The app hardcodes 8000; setting `PORT=8000` explicitly in `render.yaml` removes Render's detection uncertainty.
@@ -293,7 +295,7 @@ Consequences:
 | Inbound **email** intake | **DOES NOT WORK** | Depends on inbound mail/SMTP-style transport not available on Free. |
 | Automated SLA escalation sweep | **NOT RELIABLE** | In-process async worker cannot run while asleep; timer restarts on wake (§7). |
 | Persistent file storage | **DOES NOT WORK** | No persistent disk on Free; R2 requires a code change (§8). |
-| Production/public availability, TLS domain, scaling | **FAIL** | Free plan, governance blockers, spin-down; use the existing Compose path or an approved paid host. |
+| Production/public availability, TLS domain, scaling | **FAIL (Render Free platform fit, historical)** | Free plan, then-open governance blockers, spin-down; this is not the current release verdict — see the historical analysis note above. |
 
 ---
 
@@ -314,7 +316,7 @@ Consequences:
 
 Updated conditions before reconsidering production:
 
-1. Production/public release decision changed from FAIL to PASS by the operator (unchanged).
+1. Formal approval from the operator/university was still outstanding at audit time (historical; the current verified status is in the note above).
 2. Operator rotations completed for the identified `backend/.env` OpenAI-shaped and Fernet/BYOK values.
 3. Neon connection verified from Render: pooled host, `sslmode=require`, driver, prepared-statement/libpq check, and direct-string migration path tested.
 4. Durable attachment storage implemented (R2 or equivalent) — an approved architecture change.

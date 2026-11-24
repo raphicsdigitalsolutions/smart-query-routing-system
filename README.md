@@ -10,12 +10,14 @@ WhatsApp adapters, Google OAuth2, auto-routing/escalation, analytics, announceme
 reports, audit, and full-stack Docker Compose packaging. The original Vite app is kept untouched as
 the working reference.
 
-> **Deployment addendum (2026-11-22):** A live hackathon deployment was subsequently executed:
-> Next.js BFF on Netlify, FastAPI on Vercel Hobby, and Neon PostgreSQL. See
-> `docs/HACKATHON_DEPLOYMENT_REPORT.md` for exact URLs, deploy IDs, live smoke results, and unresolved
-> gates, and `docs/HACKATHON_DEPLOYMENT_SLIDES.pdf` for the presentation. This does not revoke the
-> formal production governance FAIL in `docs/RELEASE_READINESS.md`. Live provider features still
-> require real credentials and provider approval.
+> **Deployment addendum (2026-11-24 final verification):** A live hackathon deployment was executed:
+> Next.js BFF on Netlify, FastAPI on Vercel Hobby, and Neon PostgreSQL. The current status is
+> **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**: technical release artifacts are published
+> and verified, while formal institutional/governance approval and live provider verification remain
+> open. See `docs/HACKATHON_DEPLOYMENT_REPORT.md` for the original deployment record,
+> `docs/RELEASE_READINESS.md` for the current release verdict, and
+> `docs/HACKATHON_DEPLOYMENT_SLIDES.pdf` for the presentation. Live provider features still require
+> real credentials and provider approval.
 
 ## Main objectives
 
@@ -199,7 +201,7 @@ cd backend
 pytest
 ```
 
-The final full backend suite result is **229 passed, 17 warnings in 264.12s (0:04:24)**. The warnings
+The final full backend suite result is **229 passed, 17 warnings in 410.30s (0:06:50)**. The warnings
 are pre-existing LangSmith `asyncio.iscoroutinefunction` deprecations. The suite includes the
 FR-04b/FR-13 instructor-routing tests, FR-06 conditional-polling tests, FR-07 serverless-escalation
 tests, FR-09 manual escalation/de-escalation history & notification tests, FR-14 auth-audit tests,
@@ -298,7 +300,8 @@ npm run build
 **Not part of Phase 5 (later work)**
 
 - Gmail/email, WhatsApp, Docker application images and deployment config were added in Phase 7 as
-  code/config only; live provider verification and deployment remain pending.
+  code/config only; at that historical point live provider verification and deployment were pending.
+  A later hackathon deployment was executed — see the 2026-11-24 sections below.
 - Google OAuth and BYOK were added in Phase 7. Refresh tokens, password reset, email verification
   and user-creation CRUD are still future work.
 - Automated test suites for the Next.js frontend were manual/live plus static checks during
@@ -382,9 +385,10 @@ BYOK keys.
   `docker-compose.yml`, health checks, internal networking, migration-safe startup, external
   PostgreSQL volume reuse and root env examples with no secrets baked into images.
 - **Verification recorded:** migration head `feedf21773e1`; 41 OpenAPI paths; final full backend
-  suite **229 passed**; frontend typecheck/lint/Vitest (`3 passed`)/build (`13/13` pages) passed;
-  Playwright + axe E2E **12 passed (1.5m)**; both Docker images built and smoke-tested; Compose
-  config validation passed for both files. See `docs/TEST_REPORT.md` and `docs/RELEASE_READINESS.md`.
+  suite **229 passed, 17 warnings in 410.30s (0:06:50)**; frontend typecheck/lint/Vitest (`3 passed`)/
+  build (`12/12` pages) passed; Playwright + axe E2E **12 passed in 2.0m**; both Docker images built
+  and smoke-tested; Compose config validation passed for both files. See `docs/TEST_REPORT.md` and
+  `docs/RELEASE_READINESS.md`.
 
 **Limits and blocked checks**
 
@@ -399,20 +403,22 @@ BYOK keys.
 
 ## Verification evidence addendum (2026-11-23)
 
-This addendum reconciles stale test/QA claims with the final local evidence. It changes no
-credentials, registry, deployment, or production data and does **not** revoke the formal
-`FAIL — DO NOT DEPLOY` decision in `docs/RELEASE_READINESS.md`.
+This addendum reconciles stale test/QA claims with the local evidence available at that time. It
+changes no credentials, registry, deployment, or production data. Its historical
+`FAIL — DO NOT DEPLOY` governance verdict has since been superseded by the 2026-11-24 final
+verification below; see `docs/RELEASE_READINESS.md` for the current disposition.
 
-- **Full backend suite (final):** from `backend/`, `.\.venv\Scripts\python.exe -m pytest -q` →
-  `229 passed, 17 warnings in 264.12s (0:04:24)`. Earlier 187/202/218/225 counts in older notes are
+- **Full backend suite (final rerun):** from `backend/`, `.\.venv\Scripts\python.exe -m pytest -q` →
+  `229 passed, 17 warnings in 410.30s (0:06:50)`. Earlier 187/202/218/225 counts in older notes are
   historical. The warnings are pre-existing LangSmith deprecations. Focused security/auth/malware/cron
   run: `64 passed, 17 warnings in 27.06s`; focused escalation/ticket/notification/audit run:
   `42 passed, 17 warnings in 70.95s`.
 - **Browser E2E and accessibility:** `npm run test:e2e` in `frontend-next/` (its `pretest`
-  `next build` passed) → `12 passed (1.5m)`. The working-tree Playwright + axe suite in
+  `next build` passed) → `12 passed in 2.0m` in the final rerun (the earlier `1.5m` figure is
+  historical). The working-tree Playwright + axe suite in
   `frontend-next/e2e/` covers login, student workspace, ticket detail, and manual
   escalation/de-escalation history & notifications; axe reported **no serious or critical violations**
-  on those pages. Vitest polling-hook unit tests (`3 passed`), typecheck, lint, and build (`13/13`
+  on those pages. Vitest polling-hook unit tests (`3 passed`), typecheck, lint, and build (`12/12`
   pages) passed. This is local verification, not a claim about the hosted deployment.
 - **FR-04b / FR-13 instructor routing:** deterministic, staff-only assignment implemented in
   `app/services/instructor_routing.py`; active `InstructorLeave` windows are excluded, HOD/admin
@@ -422,9 +428,11 @@ credentials, registry, deployment, or production data and does **not** revoke th
   Modified` plus the frontend `useTicketStatusPolling` hook. This is **polling, not SSE/push**;
   covered by `tests/test_ticket_updates.py`, `useTicketStatusPolling.test.tsx` and an E2E case.
 - **FR-07 escalation:** secret-protected `POST /api/v1/tickets/escalation/sweep` (`X-Cron-Secret`,
-  constant-time check) and an hourly schedule in `backend/vercel.json`; covered by
-  `backend/tests/test_escalation_serverless.py`. **Live hosted cron execution is NOT VERIFIED**,
-  and no host or secret was changed.
+  constant-time check), covered by `backend/tests/test_escalation_serverless.py`. The schedule was
+  corrected from the invalid hourly `0 * * * *` to the supported daily `0 0 * * *`
+  (Vercel Hobby permits at most once/day); `backend/vercel.json` on current main matches the live
+  deployment. **Schedule existence is verified; hosted cron invocation and escalation effect are
+  NOT VERIFIED**, and no host or secret was changed.
 - **FR-14 auth audit:** password register/login success and failure audit events are emitted without
   recording passwords or secrets (`backend/tests/test_auth_audit.py`).
 - **Token lifetime:** `backend/tests/test_token_expiry.py` asserts the production default of 60
@@ -441,29 +449,51 @@ credentials, registry, deployment, or production data and does **not** revoke th
   A Windows-mounted EICAR fixture **failed** and is not claimed as a pass. Scanning is optional and
   `MALWARE_SCAN_ENABLED=false` by default; no scanner was deployed or configured.
 - **Secret audit:** `docs/evidence/secret_audit.json` and
-  `docs/SECRET_AUDIT_REMEDIATION_PLAN.md` report 307 tracked files, 16 workspace potential
+  `docs/SECRET_AUDIT_REMEDIATION_PLAN.md` report 385 tracked files, 17 workspace potential
   secrets, 12 git-history potential secrets, 453 docker-image potential secrets and 4 matches
   against the current local environment. No value was printed or copied and **no rotation or
   revocation was performed**; this remains an operator action and a release gate.
-- **Dependencies:** `docs/evidence/npm_audit_summary.json` reports 6 vulnerable packages
-  (2 moderate, 2 high, 2 critical): `next`/`postcss`, `zod`, and the dev-toolchain
-  `vitest`/`@vitest/mocker`/`tinypool`. Fix targets are Next.js 16.4.6, Zod 4.6.7 and Vitest 4.1.12;
-  none was applied without approval. Full JSON and dependency-path captures are in `docs/evidence/`.
-- **Registry:** the existing `ghcr.io/raphicsdigitalsolutions/smart-query-system:latest` package is
-  confirmed present and anonymously pullable at digest
+- **Dependencies (historical, superseded):** `docs/evidence/npm_audit_summary.json` reported 6
+  vulnerable packages (2 moderate, 2 high, 2 critical). Those upgrades were subsequently applied;
+  both current audits report **0 vulnerabilities** (see the 2026-11-24 sections below).
+- **Registry (historical GHCR check):** the existing
+  `ghcr.io/raphicsdigitalsolutions/smart-query-system:latest` package was confirmed present and
+  anonymously pullable at the historical digest
   `sha256:417e017081a460adfe310236e13b3e117cb972c11c5c93370968aa866a2b0f0f`
-  (`docs/evidence/ghcr_readonly_investigation.json`). Publishing current local changes still requires
-  `write:packages`; no registry was modified. The production/public release verdict remains **FAIL**.
+  (`docs/evidence/ghcr_readonly_investigation.json`). That is not the current Docker Hub release
+  digest (below). Publishing current local changes to GHCR still requires `write:packages`; no GHCR
+  registry was modified. The current release disposition is **TECHNICAL RELEASE COMPLETE; FORMAL
+  APPROVAL PENDING**.
 - **Operator detail:** `docs/FINAL_RELEASE_BLOCKERS.md` and `docs/OPERATOR_ACTION_CHECKLIST.md`
-  classify every remaining blocker with prerequisites, risks, exact commands and verification steps.
+  classify the original blockers with prerequisites, risks, exact commands and verification steps;
+  `docs/RELEASE_READINESS.md` records which remain open.
 
 ## Deployment and provider status
 
 > **Live hackathon deployment:** the FastAPI backend is on Vercel Hobby, the Next.js BFF is on Netlify
-> Free, and PostgreSQL is hosted on Neon. Exact URLs, deploy IDs, smoke results, serverless deviations,
-> and unresolved gates are in `docs/HACKATHON_DEPLOYMENT_REPORT.md`. Use `docs/DEPLOYMENT_GUIDE.md`
-> for operator-run build, migration, backup, rollback, HTTPS, and provider configuration steps.
-> Live provider verification remains blocked.
+> Free, and PostgreSQL is hosted on Neon. The original URLs, deploy IDs, smoke results, serverless
+> deviations, and unresolved gates are in `docs/HACKATHON_DEPLOYMENT_REPORT.md`. Use
+> `docs/DEPLOYMENT_GUIDE.md` for operator-run build, migration, backup, rollback, HTTPS, and provider
+> configuration steps. Live provider verification remains blocked.
+>
+> **Current verified state (2026-11-24):**
+> - Vercel production deployment `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` is `READY` (CLI source, production
+>   alias `smart-query-backend.vercel.app`), serving backend version `1.0.0`. Only the daily
+>   `0 0 * * *` escalation cron is configured; its hosted invocation is not verified.
+> - Live backend smoke: `/health` 200 `healthy`, `/api/v1/status` 200 version `1.0.0`,
+>   `/api/v1/status/database` 200 `connected`, `/api/v1/departments` 401 unauthenticated (expected).
+> - Netlify public site `https://smart-query-routing-system.netlify.app` returned HTTP 200 at `/` and
+>   `/api/health` (`Server: Netlify`). Authenticated deploy state and source sync are **NOT VERIFIED**:
+>   no Netlify token was configured, the API returned 401 without credentials, and the live HTML uses
+>   Turbopack chunks while current main builds with webpack after commit `75d6f16`. The recorded deploy
+>   ID `6b02db1360e3188d7f1074c6` could not be authenticated or confirmed. No redeploy was performed;
+>   the Netlify owner must confirm the deploy and redeploy from GitHub `main` if needed.
+> - `release-v1` database read-only verification: Neon database `neondb`, URL fingerprint
+>   `sha256_12 5d1fc726d19b`, host fingerprint `141f6064ec7f`, Alembic `feedf21773e1`, 17 public
+>   tables, `departments=4`, `users=0`, `tickets=0`, `writes_performed=false`. Branch identity came from
+>   the operator-provided, git-ignored `backend/.env.release_v1` filename; Vercel withholds sensitive
+>   `DATABASE_URL` values and the Neon UI was unavailable. Direct Vercel-to-`.env` equality and old
+>   production database state are **NOT** claimed.
 
 ## Migration considerations
 
@@ -475,20 +505,22 @@ credentials, registry, deployment, or production data and does **not** revoke th
 - The BFF means browser requests are same-origin, so the existing FastAPI CORS allowlist for Vite
   ports does not need changing.
 - Backend authorization remains authoritative; Next.js role guards only improve UX.
-- The current `npm audit` result is **6 vulnerable packages (2 moderate, 2 high, 2 critical)**,
-  recorded in `docs/evidence/npm_audit_summary.json` with full JSON captures in `docs/evidence/`.
-  Fixes involve Next.js 16.4.6, Zod 4.6.7 and Vitest 4.1.12 migrations, so none was applied without
-  approval. The Phase 5 note of 3 advisories is historical.
+- The current `npm audit` and `npm audit --omit=dev` results are **0 vulnerabilities** in
+  `frontend-next/` (`docs/evidence/npm_audit_final_2026-11-24.json`,
+  `docs/evidence/npm_audit_prod_final_2026-11-24.json`); `frontend/` also reports 0 vulnerabilities.
+  The earlier 6-package result in `docs/evidence/npm_audit_summary.json` is historical/superseded.
 
 ## Future development
 
 See [docs/DEVELOPMENT_ROADMAP.md](docs/DEVELOPMENT_ROADMAP.md). Phase 7 added the integration and
 packaging work, and the 2026-11-23 reconciliation added working-tree Playwright + axe E2E coverage.
-Remaining items are live provider verification, operator-approved deployment, verification of the
-hosted escalation cron, secret rotation/revocation, approved Next.js/Zod/Vitest upgrades, `write:packages`
-to publish current local changes (the existing `smart-query-system:latest` package is already present
-and pullable), a real labelled evaluation dataset, and optional account features such as refresh
-tokens, password reset and user CRUD. True SSE/WebSocket push is not planned or claimed.
+Remaining items are formal institutional/governance sign-off, live provider verification (Google
+OAuth, SMTP, Meta WhatsApp, real-user OpenAI BYOK), verification of the hosted escalation cron
+invocation (only the daily schedule is verified), operator-controlled secret review/rotation,
+Netlify deploy/source confirmation by the site owner, optional GHCR `write:packages` publication,
+a real labelled evaluation dataset, and optional account features such as refresh tokens, password
+reset and user CRUD. The Next.js 16.4.6/Zod 4.6.7/Vitest 4.1.12 dependency upgrades are already
+applied and verified. True SSE/WebSocket push is not planned or claimed.
 
 ## Documentation
 
@@ -513,10 +545,20 @@ tokens, password reset and user CRUD. True SSE/WebSocket push is not planned or 
 
 ## 2026-11-24 Final Submission Reconciliation
 
-- All 6 frontend dependency vulnerabilities (`next`/`postcss`, `zod`, `vitest`, `@vitest/mocker`, `tinypool`) are remediated (`next@16.4.6`, `zod@4.6.7`, `vitest@4.1.12`, `eslint-config-next@16.4.6`); `npm audit` and `npm audit --omit=dev` both report **0 vulnerabilities**.
-- Full verification re-run after upgrades: backend **229 passed (292.01s)**, `tsc --noEmit` / `eslint .` clean, Vitest **3 passed**, `next build --webpack` **PASS**, Playwright + Axe **12 passed (2.2m)**, disposable PostgreSQL backup/restore **PASS**, and backend/frontend Docker image builds **PASS**.
-- **Single Combined Production Image (`Dockerfile` + `docker/supervisord.conf`):** Built (`python:3.11-slim` + `node:20-slim` + Supervisor, Next.js 16 + FastAPI in one container, non-root UID 10001, zero devDependencies/secrets), locally smoke-verified (`api_health=200`, `internal_backend_health=healthy`, `/login` `200`, `/api/auth/session` `200`, registration `HttpOnly`/`Secure` cookie + authenticated `/api/backend/auth/me` `200`), and published to Docker Hub:
+**Status: TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING.** Technical release artifacts are
+published and verified; formal institutional/governance approval and live provider verification remain
+open. Historical `FAIL — DO NOT DEPLOY` verdicts elsewhere in this repository are superseded by this
+section and `docs/RELEASE_READINESS.md`.
+
+- **Git state:** `origin/main` is `2cb5595ee7a38c85c63223079dc9d17a290ed089`. Chain:
+  `b51dd31` → `7ad663e` (daily cron + Phase 1/2 evidence) → `eb30f92` (Docker Hub evidence) →
+  `2cb5595` (live verification evidence). Working tree was clean after that commit.
+- **All 6 frontend dependency vulnerabilities** (`next`/`postcss`, `zod`, `vitest`, `@vitest/mocker`, `tinypool`) are remediated (`next@16.4.6`, `zod@4.6.7`, `vitest@4.1.12`, `eslint-config-next@16.4.6`); `npm audit` and `npm audit --omit=dev` both report **0 vulnerabilities** (`docs/evidence/npm_audit_final_2026-11-24.json`, `docs/evidence/npm_audit_prod_final_2026-11-24.json`).
+- **Final verification re-run after upgrades:** backend **229 passed, 17 warnings in 410.30s (0:06:50)**, 0 failed/errors (`docs/evidence/final_backend_test.json`); `tsc --noEmit` / `eslint .` PASS, Vitest **3 passed**, `next build --webpack` **PASS** with Next.js 16.4.6 and **12/12** static pages, Playwright + axe **12 passed in 2.0m** with no serious/critical violations (`docs/evidence/e2e_axe_result.json`), disposable PostgreSQL backup/restore PASS, `docker compose -f docker-compose.db.yml config --quiet` and `docker compose -f docker-compose.yml config --quiet` PASS, `docker build --check .` no warnings, Alembic heads/current `feedf21773e1` and `alembic check` clean.
+- **Single Combined Production Image (`Dockerfile` + `docker/supervisord.conf`):** Built (`python:3.11-slim` + `node:20-slim` + Supervisor, Next.js 16 + FastAPI in one container, non-root UID 10001, zero devDependencies/secrets), locally smoke-verified (healthy container, UID 10001, Supervisor backend+frontend RUNNING, backend health/login/api-health/session all HTTP 200 using disposable SQLite with email/WhatsApp/worker disabled). The image contains no `.env` or key files; pattern matches were Next.js docs/library strings only. Published to Docker Hub:
   - Public Repository: `https://hub.docker.com/r/raphicsdigitalsolutions/smart-query-system`
   - Pull Command: `docker pull raphicsdigitalsolutions/smart-query-system:latest`
-  - Verified Tags & Digest: `latest` & `v1.0.0` (`sha256:e9ed70810b3f9e5c6bb5ee1e7fb83847acb423c18a2bb506d9e83a5368450430`, anonymous manifest/pull verified)
+  - Verified Tags & Digest: `latest` and `v1.0.0` both publish `sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177`, matching local RepoDigests. Anonymous pull with a temporary empty Docker config exited 0 and the anonymous registry manifest returned HTTP 200 (`docs/evidence/phase4_docker_hub_release_2026-11-24.json`, `docs/evidence/docker_hub_anonymous_pull_2026-11-24.json`). The older `sha256:e9ed70810b3f9e5c6bb5ee1e7fb83847acb423c18a2bb506d9e83a5368450430` is stale.
+- **Live and deployment verification (`docs/evidence/phase5_live_verification_2026-11-24.json`, `docs/evidence/release_v1_readonly_verification_2026-11-24.json`):** Vercel production deployment `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` is READY; live backend smoke checks passed; the `release-v1` database was verified read-only with `writes_performed=false` as described above. Only the daily cron schedule existence is verified — hosted invocation/escalation effect, Google OAuth, SMTP, Meta WhatsApp, real-user OpenAI BYOK, university/institutional approval, hosted restore/malware scanner, and monitoring/retention are **NOT VERIFIED**.
+- **Evidence index:** `docs/evidence/phase1_release_audit_2026-11-24.json`, `phase2_quality_verification_2026-11-24.json`, `phase4_docker_hub_release_2026-11-24.json`, `phase5_live_verification_2026-11-24.json`, `release_v1_readonly_verification_2026-11-24.json`, `docker_hub_anonymous_pull_2026-11-24.json`, `final_backend_test.json`, `e2e_axe_result.json`, `npm_audit_final_2026-11-24.json`, `npm_audit_prod_final_2026-11-24.json`.
 - **University Submission Archive:** `submission/SmartQuerySystem_Final_Submission/` and `submission/SmartQuerySystem_Final_Submission.zip` (clean source, docs, env examples, evidence, and migrations with no `.env` secrets, `node_modules`, `.venv`, or DB dumps).

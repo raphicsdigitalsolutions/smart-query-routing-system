@@ -1,9 +1,10 @@
 # Operator Action Checklist — Release Blockers
 
-**Document date:** 2026-11-23  
+> **Current verified release status (2026-11-24):** Technical release artifacts are published and verified; formal institutional/governance approval and live provider verification remain open. Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`. Current verdict: **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**. Historical FAIL wording below is superseded.
+
+**Document date:** 2026-11-23; reconciled 2026-11-24  
 **Audience:** System owner / deployment operator with approved credentials.  
-**Decision context:** Production/public release remains **FAIL — DO NOT DEPLOY**
-(`docs/RELEASE_READINESS.md`). This checklist is a runbook, not authorisation to perform the actions.  
+**Decision context:** Open operator-owned items are formal scope/sign-off approval, live provider verification, hosted-restore/monitoring confirmation and Netlify source-sync confirmation. The earlier **FAIL — DO NOT DEPLOY** decision was a historical governance verdict, not the current status. This checklist is a runbook, not authorisation to perform the actions.  
 **Safety rule:** Nothing in this checklist should paste a token, key, password, connection string or
 secret value into chat, a ticket, a shell history file, a committed file, or a log. Use placeholders
 such as `<operator-supplied value>` and read values only from the operator's secret manager or secure
@@ -19,9 +20,11 @@ shell environment.
 - [ ] For dependency work: explicit approval for semver-major Next.js/Zod and Vitest 4 toolchain changes.
 - [ ] Confirm the target is not the existing production/external volume unless explicitly approved. Never delete `smartquerysystem_smartquery_postgres_data`.
 
-Baseline state recorded by the audit: `HEAD 6f388d03a680daf1e63466d65e30c62029aa892b`, one local
-commit, `origin` configured, 39 modified tracked files and 47 untracked paths (including the E2E
-suite). No commit/push/tag/branch was created. Re-check before and after every operator action:
+Baseline state recorded by the 2026-11-23 audit (historical): `HEAD 6f388d03a680daf1e63466d65e30c62029aa892b`,
+one local commit, `origin` configured, 39 modified tracked files and 47 untracked paths (including
+the E2E suite). Current state: `origin/main` is
+`2cb5595ee7a38c85c63223079dc9d17a290ed089` with a clean working tree; chain `b51dd31` → `7ad663e`
+→ `eb30f92` → `2cb5595`. Re-check before and after every operator action:
 
 ```powershell
 git status --short --branch
@@ -48,9 +51,11 @@ cmd /c "npm audit --omit=dev --json > ..\docs\evidence\npm_audit_prod_<DATE>.jso
 npm ls next postcss zod vitest @vitest/mocker tinypool
 ```
 
-Expected baseline: 6 vulnerable packages (2 moderate, 2 high, 2 critical); production-only 3
-(next/postcss/zod). GHCR digest baseline:
-`sha256:417e017081a460adfe310236e13b3e117cb972c11c5c93370968aa866a2b0f0f`.
+Historical baseline: 6 vulnerable packages (2 moderate, 2 high, 2 critical); production-only 3
+(next/postcss/zod). Current expectation: **0 vulnerabilities** in both `npm audit` and
+`npm audit --omit=dev` after the 2026-11-24 remediation. Historical GHCR digest baseline:
+`sha256:417e017081a460adfe310236e13b3e117cb972c11c5c93370968aa866a2b0f0f`; current Docker Hub
+image digest: `sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177`.
 
 ## 2. Blockers A–B: credential candidates and BYOK migration
 
@@ -247,8 +252,9 @@ empty and `ALLOW_GLOBAL_OPENAI_FALLBACK=false`.
 Prerequisites: deployed host, `ESCALATION_CRON_SECRET` configured in the host secret store, scheduler
 enabled, approval for live escalation of test tickets.
 
-- [ ] Confirm the host has `ESCALATION_CRON_SECRET` set and cron configured (hourly in
-      `backend/vercel.json` for Vercel-style hosting).
+- [ ] Confirm the host has `ESCALATION_CRON_SECRET` set and cron configured (final daily
+      `0 0 * * *` in `backend/vercel.json` for Vercel-style hosting; Hobby allows at most once/day).
+      The live cron list already shows exactly that one job; **actual invocation is NOT VERIFIED**.
 - [ ] Create a disposable overdue ticket in a non-production dataset, or use an approved test window.
 - [ ] Observe the scheduled run in host logs; or, with explicit approval, trigger once:
 
@@ -301,9 +307,12 @@ data without a maintenance window and owner approval.
 
 ## 8. Blocker H: GHCR publication (only after approval and write access)
 
-Current fact: `ghcr.io/raphicsdigitalsolutions/smart-query-system:latest` exists, is anonymously
-pullable and matches digest `sha256:417e017081a460adfe310236e13b3e117cb972c11c5c93370968aa866a2b0f0f`.
-**The current local changes are not published.** No push was attempted.
+Historical GHCR fact (2026-11-23): `ghcr.io/raphicsdigitalsolutions/smart-query-system:latest` exists,
+is anonymously pullable and matches digest `sha256:417e017081a460adfe310236e13b3e117cb972c11c5c93370968aa866a2b0f0f`.
+The then-current local changes were not published to GHCR and no push was attempted. The current
+release image is published on Docker Hub at digest
+`sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177` (§9); GHCR publication
+remains BLOCKED pending `write:packages`.
 
 - [ ] Owner supplies a local `write:packages` credential; never paste it into chat.
 - [ ] Pin a release tag (not `latest`) and confirm which package name(s) are in scope.
@@ -326,12 +335,21 @@ pullable and matches digest `sha256:417e017081a460adfe310236e13b3e117cb972c11c5c
       Compose config, image builds, redacted secret audit.
 - [ ] Confirm all blockers A–H are either PASS with evidence or formally accepted with signed exceptions.
 - [ ] Update `docs/FINAL_RELEASE_BLOCKERS.md`, `docs/RELEASE_READINESS.md` and the completion matrix.
-- [ ] Only then obtain a new, explicit release decision. The existing verdict is
-      **FAIL — DO NOT DEPLOY**.
+- [ ] Only then obtain formal institutional approval. Current verdict: **TECHNICAL RELEASE
+      COMPLETE; FORMAL APPROVAL PENDING** (the earlier FAIL is historical).
+- [ ] Confirm the Netlify production deploy for `smart-query-routing-system.netlify.app` and redeploy
+      from GitHub main if the live site still serves Turbopack chunks; no redeploy was performed
+      during verification. Deploy ID `6b02db1360e3188d7f1074c6` is unconfirmed.
+- [ ] If database parity matters, re-check `release-v1` against the hosted database: read-only
+      verification found `neondb`, URL fingerprint `5d1fc726d19b`, host fingerprint
+      `141f6064ec7f`, Alembic `feedf21773e1`, 17 public tables, 4 departments, 0 users, 0 tickets,
+      no writes. Branch identity came from the git-ignored `backend/.env.release_v1` file name;
+      hosted equality and old DB state are NOT VERIFIED.
 
 ## 10. Explicit non-actions of the 2026-11-23 audit
 
 No commit, push, branch, tag, deployment, registry write, DNS/TLS change, provider registration,
 billing change, GitHub remote change, production database access/modification, credential
 rotation/revocation, or destructive working-tree change was performed. The Playwright/axe E2E files
-are untracked working-tree files and must not be described as committed.
+were untracked working-tree files at that time; they are now committed on current `origin/main`
+(`2cb5595`), as noted in §9.

@@ -1,28 +1,30 @@
 # Hackathon Deployment Presentation — Smart Query Routing System
 
+> **Current verified release status (2026-11-24):** Technical release artifacts are published and verified; formal institutional/governance approval and live provider verification remain open. Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`. Current verdict: **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**. Historical slide values below are corrected in the 2026-11-24 addendum at the end.
+
 ## Slide 1 — Title
 Smart Query Routing System  
 Hackathon deployment execution — 22 Nov 2026; local reconciliation 23 Nov 2026  
 Backend → DB → Frontend → Auth → Images → Documentation  
 **Live demo:** https://smart-query-routing-system.netlify.app  
-Status: **Live demonstration; formal production sign-off still open (FAIL verdict unchanged)**  
+Status: **Technical release complete; formal approval pending**  
 No secret values, tokens, or connection strings appear in this deck.
 
 ## Slide 2 — Live topology
 - Frontend/BFF: Netlify Free — `https://smart-query-routing-system.netlify.app`
-- Deploy: `6b02db1360e3188d7f1074c6` — Live
+- Netlify deploy ID `6b02db1360e3188d7f1074c6` is **historical/unconfirmed**: authenticated deploy state and source sync NOT VERIFIED (API 401); live HTML uses Turbopack chunks while current main builds with webpack
 - Backend: Vercel Hobby — `https://smart-query-backend.vercel.app`
-- Deploy: `dpl_3va9eirAAZ6wajnAVd2bL3kP2EVV` — Ready
-- Database: Neon PostgreSQL — 17 tables — `feedf21773e1`
-- GHCR: images built locally; remote push BLOCKED by missing `write:packages`; registry content untouched
+- Deploy: `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` — READY, production, source CLI; aliases `smart-query-backend.vercel.app` and `smart-query-backend-inforaphicsdigital-8444.vercel.app`
+- Database: Neon `release-v1` — 17 public tables, 4 departments, 0 users, 0 tickets — `feedf21773e1` (read-only verified; no writes)
+- Docker Hub: `raphicsdigitalsolutions/smart-query-system:latest` / `:v1.0.0` digest `sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177`, anonymous pull verified; GHCR push still BLOCKED by missing `write:packages`
 
 ## Slide 3 — What was verified
-- Backend final full suite: **225 passed, 17 warnings in 265.61s (0:04:25)** — pre-existing LangSmith deprecations
-- Frontend: typecheck/lint/build pass; 13/13 routes
-- Backend root, `/health`, `/docs`, `/openapi.json`: **200**
-- `/api/v1/status/database`: **200 connected**; frontend root and `/api/health`: **200**
-- Playwright + axe: build passed, **11 passed (~1.3m)**; no serious/critical axe violations on login, student workspace, ticket detail (LOCAL VERIFIED)
-- Neon schema verified at expected Alembic head
+- Backend final full suite: **229 passed, 17 warnings in 410.30s (0:06:50)**, 0 failed/errors — pre-existing LangSmith deprecations
+- Frontend: typecheck/lint pass; build PASS with Next.js 16.4.6 webpack, 12/12 routes; Vitest 3 passed
+- Backend root, `/health`, `/docs`, `/openapi.json`: **200** (live re-check: `/health`, `/api/v1/status`, `/api/v1/status/database` HTTP 200; `/api/v1/departments` HTTP 401 expected)
+- `/api/v1/status/database`: **200 connected**; frontend root and `/api/health`: **200** (public smoke only; source sync NOT VERIFIED)
+- Playwright + axe: build passed, **12 passed (2.0m)**; no serious/critical axe violations on login, student workspace, ticket detail (LOCAL VERIFIED)
+- `release-v1` Neon schema read-only verified at expected Alembic head: 17 public tables, 4 departments, 0 users, 0 tickets; no writes
 
 ## Slide 4 — BFF integration smoke
 - Registration/login through BFF: **200**
@@ -34,7 +36,7 @@ No secret values, tokens, or connection strings appear in this deck.
 
 ## Slide 5 — Serverless deviations
 - Background escalation worker disabled on Vercel
-- `backend/vercel.json` configures an hourly secret-protected sweep trigger; LIVE cron execution **NOT VERIFIED**
+- `backend/vercel.json` configures one daily secret-protected sweep trigger (`0 0 * * *`); the live cron list confirms the schedule, but hosted invocation is **NOT VERIFIED**
 - Attachments use `/tmp`; ephemeral and not shared
 - Upload cap 4 MiB to match Vercel body limit; DB pool 1 + 0 overflow
 - Migrations off; Neon already at head
@@ -65,19 +67,20 @@ No secret values, tokens, or connection strings appear in this deck.
 - No push, tag overwrite, visibility change, or deletion performed
 
 ## Slide 9 — Open gates
-- GHCR publication BLOCKED; live provider verification BLOCKED
-- Prior `FAIL — DO NOT DEPLOY` governance verdict unresolved
+- GHCR publication BLOCKED; Docker Hub image published and anonymously pull-verified
+- Technical release artifacts complete and verified; formal governance approval still pending
 - University approval required for scope deviations, substitutions, zero-cost, leave workflow, public release
-- Hosted cron execution NOT VERIFIED
-- npm audit after Playwright/axe install: 6 vulnerabilities (2 moderate, 2 high, 2 critical)
+- Hosted cron schedule verified; actual invocation NOT VERIFIED
+- npm audit and npm audit --omit=dev: 0 vulnerabilities after remediation
+- Netlify authenticated deploy state/source sync NOT VERIFIED; owner should confirm/redeploy from GitHub main
 - Secret audit triage complete; no rotation/revocation authorized or performed
-- Backup/restore rehearsal PASS locally; malware scan PASS_LOCAL_INTEGRATION_ONLY, NOT DEPLOYED
+- Backup/restore rehearsal PASS locally; hosted restore and malware scanner NOT VERIFIED; monitoring/retention NOT VERIFIED
 
 ## Slide 10 — Security verification
 - JWT secret high entropy and differs from old compromised value; old OpenAI key revoked at deployment time
 - BYOK Fernet key valid and rotated; 0 encrypted records to break
 - Global key empty; fallback false; DB SSL on Neon; CORS restricted; cookies Secure + HttpOnly
-- Broader secret audit: 307 tracked; 16 workspace potential; 12 git-history potential; 453 image potential; 4 local-env matches
+- Broader secret audit: 385 tracked; 17 workspace potential; 12 git-history potential; 453 image potential; 4 local-env matches
 - Audit stores field names/lengths/fingerprints only — no values printed; no rotation/revocation
 - See `docs/SECRET_AUDIT_REMEDIATION_PLAN.md`
 
@@ -98,12 +101,12 @@ No secret values, tokens, or connection strings appear in this deck.
 - Disposable tickets/users removed; 1 admin user, 0 tickets remain
 
 ## Slide 13 — Conclusion
-- Real public deployment: frontend + backend + database connected
-- Live smoke evidence passes; local reconciliation adds deterministic routing, polling, cron trigger, auth audits, restore rehearsal and local malware integration
+- Real public deployment: frontend + backend + database connected; backend at `origin/main` `2cb5595`, clean tree
+- Live smoke evidence passes; local reconciliation adds deterministic routing, polling, daily cron trigger, auth audits, restore rehearsal and local malware integration
 - Suitable for a live hackathon demonstration
-- Not a formally approved production release; FAIL verdict remains
-- Hosted cron, live provider checks and GHCR publication remain BLOCKED/NOT VERIFIED
-- Full evidence: `docs/HACKATHON_DEPLOYMENT_REPORT.md`; slides source: `docs/HACKATHON_DEPLOYMENT_SLIDES.md`
+- **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING** — not an institutionally approved production release
+- Hosted cron invocation, live provider checks, Netlify source sync and GHCR publication remain BLOCKED/NOT VERIFIED
+- Full evidence: `docs/HACKATHON_DEPLOYMENT_REPORT.md`, `docs/evidence/phase5_live_verification_2026-11-24.json`; slides source: `docs/HACKATHON_DEPLOYMENT_SLIDES.md`
 
 ## 2026-11-23 read-only GHCR addendum
 
@@ -113,5 +116,16 @@ Slide 8 records the 2026-11-22 publication state. A later read-only check
 at digest `sha256:417e017081a460adfe310236e13b3e117cb972c11c5c93370968aa866a2b0f0f`, matching the
 recorded and local digests. The "remote manifests missing" wording is therefore superseded for that
 package. No push or registry write was performed, and publication of current local changes still
-requires `write:packages`. The generated PDF retains the historical 2026-11-22 slide wording; this
-addendum is the current evidence.
+requires `write:packages`. The generated PDF retains the historical 2026-11-22 slide wording; that
+addendum is superseded by the 2026-11-24 addendum below.
+
+## 2026-11-24 final verification addendum (current)
+
+Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`.
+
+- Git `origin/main`: `2cb5595ee7a38c85c63223079dc9d17a290ed089` (`b51dd31` → `7ad663e` → `eb30f92` → `2cb5595`); clean working tree after that commit.
+- Vercel deployment `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` is READY/production/source CLI with the two aliases above. Deployed metadata commit `b51dd31` had a dirty CLI working tree, but the deployed config already contains the final daily cron and current main matches. Live cron list: one job, `0 0 * * *`, `/api/v1/tickets/escalation/sweep`; invocation NOT VERIFIED.
+- Netlify public root and `/api/health` HTTP 200, but authenticated deploy state and source sync NOT VERIFIED (API 401, no token); live Turbopack chunks vs current webpack build prevent a "matches main" claim. Deploy `6b02db1360e3188d7f1074c6` is unconfirmed. Owner: confirm/redeploy from GitHub main; no redeploy performed.
+- `release-v1` database read-only: `neondb`, URL fingerprint `5d1fc726d19b`, host fingerprint `141f6064ec7f`, Alembic `feedf21773e1`, 17 public tables, 4 departments, 0 users, 0 tickets, no writes. Branch identity from the git-ignored `backend/.env.release_v1` file name; hosted equality and old DB state NOT VERIFIED.
+- Docker Hub `raphicsdigitalsolutions/smart-query-system:latest` / `:v1.0.0` digest `sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177` (replaces stale `sha256:e9ed708…`): anonymous pull exit 0 with empty Docker config, manifest HTTP 200; container smoke healthy, UID 10001, Supervisor backend+frontend RUNNING, 4 HTTP checks 200 with disposable SQLite/no external integrations, no `.env` or key files in image.
+- Final verdict: **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**. NOT VERIFIED: Google OAuth, SMTP, Meta WhatsApp, real-user BYOK, hosted cron invocation, university approval, hosted restore/malware scanner, monitoring/retention.

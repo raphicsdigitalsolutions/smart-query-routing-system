@@ -1,5 +1,7 @@
 # Development Roadmap
 
+> **Current verified release status (2026-11-24):** Technical release artifacts are published and verified; formal institutional/governance approval and live provider verification remain open. Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`. Current verdict: **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**. Historical phase notes below retain their original counts and FAIL wording; the final reconciliation is at the end.
+
 Phases 1–6 below are historical, completed stages. Phase 7 was the completed implementation and packaging stage. “Complete” means implemented and exercised locally or with deterministic tests. A live hackathon deployment was subsequently executed; see `docs/HACKATHON_DEPLOYMENT_REPORT.md` for actual endpoints, verification, and remaining governance gaps.
 
 ## Phase 1: Initial setup ✅
@@ -132,8 +134,8 @@ Phases 1–6 below are historical, completed stages. Phase 7 was the completed i
   a working-tree Playwright + axe suite was added in the 2026-11-23 reconciliation below.
 - Existing Vite JWTs are module-memory only and are not shared; users sign in once in Next.js.
 - `npm audit` reported 3 dependency advisories in Phase 5 (PostCSS via Next.js 15 and Zod 3); no
-  breaking forced upgrade was applied. The current result is 6 vulnerabilities — see the
-  2026-11-23 reconciliation below.
+  breaking forced upgrade was applied at that time. The later result was 6 vulnerabilities; all
+  were remediated on 2026-11-24 (0 vulnerabilities) — see the reconciliation sections below.
 - There is still no backend user-CRUD endpoint, refresh token flow or password reset.
 
 ### Intentionally not part of Phase 5 (later Phase 7 work)
@@ -315,10 +317,11 @@ Phase 7 completed the original integration and platform requirements as code and
       `44273a775ed8` → `47ebce833eae` → `b7d4e91c2a83` → `feedf21773e1`.
 - [x] The OpenAPI schema registers **41 OpenAPI paths** after adding ticket attachments and the
       WhatsApp verification handshake.
-- [x] The FINAL full backend suite result is **225 passed, 17 warnings in 265.61s (0:04:25)**
-      (17 pre-existing LangSmith deprecation warnings), including the AI rate-limit, attachment,
-      webhook, FR-04b/FR-13 instructor-routing, FR-06 polling, FR-07 escalation, FR-14 auth-audit
-      and token-expiry regression tests. Older 187/202 counts were intermediate runs.
+- [x] The FINAL full backend suite result is **229 passed, 17 warnings in 410.30s (0:06:50)**,
+      0 failed/errors (17 pre-existing LangSmith deprecation warnings), including the AI rate-limit,
+      attachment, webhook, FR-04b/FR-13 instructor-routing, FR-06 polling, FR-07 escalation,
+      FR-14 auth-audit and token-expiry regression tests. Older 187/202/218/225 counts were
+      intermediate runs.
 - [x] Automated tests remain deterministic: mocked LLM responses and synthetic evaluation data; no
       paid provider calls are part of the automated suite.
 - [x] Updated `README.md`, this roadmap, `docs/DEPLOYMENT_GUIDE.md`, `docs/USER_GUIDE.md`,
@@ -331,38 +334,43 @@ Phase 7 completed the original integration and platform requirements as code and
 
 - [ ] Run live provider checks after credentials/approval are supplied: OpenAI live evaluation,
       SMTP delivery, Meta WhatsApp delivery/inbound verification and Google OAuth.
-- [ ] Deploy the stack and publish images only after explicit approval; public deployment is not
-      approved and the release verdict remains FAIL.
-- [x] Add working-tree Next.js e2e/accessibility tests — done in the 2026-11-23 reconciliation
-      (`11 passed (1.3m)`, no serious/critical axe violations). Coverage thresholds and CI checks
-      remain future work.
+- [x] A hackathon deployment and image publication were subsequently executed; public/institutional
+      approval is still pending and the current verdict is **TECHNICAL RELEASE COMPLETE; FORMAL
+      APPROVAL PENDING**.
+- [x] Add working-tree Next.js e2e/accessibility tests — final result `12 passed (2.0m)`, no
+      serious/critical axe violations. Coverage thresholds and CI checks remain future work.
 - [ ] Add a real labelled evaluation dataset and interpret live results with real privacy approval.
 - [ ] Add refresh tokens, password reset and backend user CRUD if they are still desired.
-- [ ] Verify the hosted escalation cron and configure `ESCALATION_CRON_SECRET` on the target host.
+- [ ] Verify hosted escalation cron invocation (the daily schedule is verified) and configure
+      `ESCALATION_CRON_SECRET` on the target host.
 - [ ] Rotate/revoke the secrets identified in the redacted secret audit; no rotation was performed.
-- [ ] Obtain approval for the Next.js/Zod and test-toolchain upgrades behind the 6 npm advisories.
-- [ ] Obtain GHCR `write:packages` permission before any registry publication.
+- [x] Next.js/Zod and test-toolchain upgrades behind the 6 npm advisories were applied and verified
+      (0 vulnerabilities).
+- [ ] Obtain GHCR `write:packages` permission before any GHCR publication; Docker Hub publication
+      was completed separately.
 - [x] Author `docs/TEST_REPORT.md` and re-run the full suite after the final regression addition.
 
 ## 2026-11-23 reconciliation (post-Phase 7 verification)
 
-This section supersedes stale test/build/QA numbers in the historical phase notes above. It records
-local evidence only, changes no credentials, registry, deployment or production data, and does
-**not** revoke the `FAIL — DO NOT DEPLOY` decision in `docs/RELEASE_READINESS.md`.
+This section supersedes stale test/build/QA numbers in the historical phase notes above. It recorded
+local evidence only, changed no credentials, registry, deployment or production data, and did
+**not** revoke the then-current `FAIL — DO NOT DEPLOY` decision. The final 2026-11-24 release state
+is in the last section of this roadmap.
 
 - [x] FINAL full backend suite from `backend/`:
-      `.\.venv\Scripts\python.exe -m pytest -q` → `225 passed, 17 warnings in 265.61s (0:04:25)`.
-      Warnings are pre-existing LangSmith `asyncio.iscoroutinefunction` deprecations. Focused
-      malware/attachment tests: `10 passed, 17 warnings in 7.63s`.
-- [x] Working-tree `frontend-next/e2e/` Playwright + axe suite: `npm run test:e2e` → `11 passed (1.3m)`;
-      `pretest` `next build` passed; no serious/critical axe violations on login, student workspace
-      or ticket detail. Vitest `useTicketStatusPolling.test.tsx` exists; typecheck/lint/build passed.
+      `.\.venv\Scripts\python.exe -m pytest -q` → `229 passed, 17 warnings in 410.30s (0:06:50)`,
+      0 failed/errors. Warnings are pre-existing LangSmith `asyncio.iscoroutinefunction`
+      deprecations. Focused malware/attachment tests: `10 passed, 17 warnings in 7.63s`.
+- [x] `frontend-next/e2e/` Playwright + axe suite: `npm run test:e2e` → `12 passed (2.0m)`;
+      build passed with Next.js 16.4.6 webpack (`12/12` pages); no serious/critical axe violations
+      on login, student workspace or ticket detail. Vitest `3 passed`; typecheck/lint PASS.
 - [x] FR-04b/FR-13: deterministic, staff-only instructor routing (`test_instructor_routing.py`),
       active `InstructorLeave` windows excluded, HOD/admin never auto-assigned, overrides audited.
 - [x] FR-06: conditional `GET /api/v1/tickets/{id}/updates` (ETag/304) and frontend
       `useTicketStatusPolling` hook; local-verified. This is **polling, not SSE/push**.
-- [x] FR-07: secret-protected `POST /api/v1/tickets/escalation/sweep` and hourly `backend/vercel.json`
-      cron entry (`test_escalation_serverless.py`). **Live hosted cron execution NOT VERIFIED.**
+- [x] FR-07: secret-protected `POST /api/v1/tickets/escalation/sweep` and final daily
+      `0 0 * * *` `backend/vercel.json` cron entry (`test_escalation_serverless.py`). The live cron
+      list shows exactly that one job; **actual hosted invocation NOT VERIFIED**.
 - [x] FR-14: password register/login success and failure audit events without passwords/secrets
       (`test_auth_audit.py`).
 - [x] `test_token_expiry.py` asserts production 60-minute default; 1440 minutes is test-only.
@@ -377,10 +385,22 @@ local evidence only, changes no credentials, registry, deployment or production 
       in-container base64 EICAR `FOUND`/exit 1. A Windows-mounted EICAR fixture failed and is not
       claimed as a pass. `MALWARE_SCAN_ENABLED=false` by default; not deployed.
 - [x] Secret audit (`docs/evidence/secret_audit.json`, `docs/SECRET_AUDIT_REMEDIATION_PLAN.md`):
-      307 tracked files, 16 workspace potential secrets, 12 git-history potential secrets,
+      385 tracked files, 17 workspace potential secrets, 12 git-history potential secrets,
       453 docker-image potential secrets, 4 current-local-env matches; **no rotation/revocation**.
-- [x] `npm audit`: 6 vulnerabilities (2 moderate, 2 high, 2 critical) in
-      `docs/evidence/npm_audit_summary.json`; not auto-fixed pending approval for major
-      Next.js/Zod and test-toolchain upgrades.
-- [ ] GHCR publication remains blocked by missing `write:packages`; registry unchanged. Production
-      and public release verdict remains FAIL.
+- [x] `npm audit` findings were remediated (`vitest@4.1.12`, `zod@4.6.7`, `next@16.4.6`,
+      `eslint-config-next@16.4.6`); both `npm audit` and `npm audit --omit=dev` report 0
+      vulnerabilities (`docs/evidence/npm_audit_post_remediation.json`). The 6-finding
+      `docs/evidence/npm_audit_summary.json` is historical.
+- [ ] GHCR publication remains blocked by missing `write:packages`; registry unchanged. Docker Hub
+      image publication was verified; see the final reconciliation below for the current verdict.
+
+## Final 2026-11-24 release reconciliation (current)
+
+Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`. Current verdict: **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**; all FAIL wording above is historical.
+
+- Git: `origin/main` `2cb5595ee7a38c85c63223079dc9d17a290ed089`; chain `b51dd31` → `7ad663e` (daily cron + Phase 1/2 evidence) → `eb30f92` (Docker Hub evidence) → `2cb5595` (live verification evidence); clean working tree after that commit.
+- Backend: Vercel `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` READY/production/source CLI with aliases `smart-query-backend.vercel.app` and `smart-query-backend-inforaphicsdigital-8444.vercel.app`; deployed metadata commit `b51dd31` with dirty CLI tree, deployed config already has the daily cron and current main matches. Live cron list: one `0 0 * * *` job; invocation NOT VERIFIED. `/health`, `/api/v1/status`, `/api/v1/status/database` HTTP 200; `/api/v1/departments` HTTP 401 expected.
+- Frontend: Netlify public root and `/api/health` HTTP 200, but authenticated deploy state and source sync NOT VERIFIED (no token; API 401). Live Turbopack chunks vs current webpack build after `75d6f16` prevent a "matches main" claim; deploy `6b02db1360e3188d7f1074c6` unconfirmed. Owner: confirm/redeploy from GitHub main; no redeploy performed.
+- Database: `release-v1` read-only — `neondb`, URL fingerprint `5d1fc726d19b`, host fingerprint `141f6064ec7f`, Alembic `feedf21773e1`, 17 public tables, 4 departments, 0 users, 0 tickets, no writes. Branch identity from the git-ignored `backend/.env.release_v1` file name; Vercel sensitive values withheld and Neon UI unavailable, so hosted equality and old DB state NOT VERIFIED.
+- Image: Docker Hub `raphicsdigitalsolutions/smart-query-system:latest` / `:v1.0.0` digest `sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177` (replaces stale `sha256:e9ed708…`); anonymous pull exit 0 with empty Docker config, manifest HTTP 200; smoke healthy, UID 10001, Supervisor backend+frontend RUNNING, 4 HTTP checks 200 with disposable SQLite/no external integrations, no `.env` or key files in image.
+- NOT VERIFIED: Google OAuth, SMTP, Meta WhatsApp, real-user BYOK, hosted cron invocation, university approval, hosted restore/malware scanner, monitoring/retention.

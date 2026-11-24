@@ -1,5 +1,7 @@
 # Project Overview
 
+> **Current verified release status (2026-11-24):** Technical release artifacts are published and verified; formal institutional/governance approval and live provider verification remain open. Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`. Current verdict: **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**.
+
 ## Problem statement
 
 Universities receive a high volume of student queries through scattered channels: email, portals,
@@ -20,8 +22,10 @@ reporting, announcements, leave, audit, and Docker packaging. Humans remain in c
 decisions.
 
 The current implementation covers Phases 1–7. Provider-dependent behavior is tested offline; live
-Google, SMTP, Meta WhatsApp, and OpenAI verification remain operator actions. See
-`docs/RELEASE_READINESS.md` for the final deployment decision.
+Google, SMTP, Meta WhatsApp, and real-user BYOK verification remain operator actions. Technical
+release artifacts are published and verified; formal institutional/governance approval remains
+pending. Authoritative state: `docs/evidence/phase5_live_verification_2026-11-24.json`. Current
+verdict: **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**.
 
 ## Main users and roles
 
@@ -83,16 +87,17 @@ provisioning path.
   Modified` snapshot consumed by the `useTicketStatusPolling` hook. This is **polling, not
   SSE/WebSocket push**.
 - Secret-protected escalation trigger (FR-07): `POST /api/v1/tickets/escalation/sweep` with
-  `X-Cron-Secret` and an hourly `backend/vercel.json` schedule
-  (`backend/tests/test_escalation_serverless.py`). **Live hosted cron execution is NOT VERIFIED.**
+  `X-Cron-Secret` and a daily `0 0 * * *` `backend/vercel.json` schedule
+  (`backend/tests/test_escalation_serverless.py`). The live cron list confirms the schedule;
+  **actual hosted invocation is NOT VERIFIED**.
 - Password register/login success and failure audit events without passwords or secrets (FR-14,
   `backend/tests/test_auth_audit.py`).
 - `backend/tests/test_token_expiry.py` asserts the production 60-minute default; the 1440-minute
   lifetime is test-only.
-- Working-tree Playwright + axe E2E suite: `npm run test:e2e` → `11 passed (1.3m)` with `pretest`
-  `next build` passing and no serious/critical axe violations on login, student workspace or ticket
-  detail. Vitest polling-hook tests exist; typecheck/lint/build passed.
-- Final full backend suite: `225 passed, 17 warnings in 265.61s (0:04:25)`; focused
+- Playwright + axe E2E suite: `npm run test:e2e` → `12 passed (2.0m)` with a successful webpack
+  build (`12/12` pages) and no serious/critical axe violations on login, student workspace or ticket
+  detail. Vitest `3 passed`; lint/typecheck PASS.
+- Final full backend suite: `229 passed, 17 warnings in 410.30s (0:06:50)`, 0 failed/errors; focused
   malware/attachment tests: `10 passed, 17 warnings in 7.63s`.
 - Backup/restore rehearsal PASS (`docs/evidence/backup_restore_rehearsal.json`) on a disposable
   `postgres:16-alpine` instance at `127.0.0.1:55432`, with matching schema/record hashes and stale
@@ -105,15 +110,19 @@ provisioning path.
 ### Explicitly pending or blocked
 
 - True SSE/WebSocket push is not implemented; FR-06 is conditional polling only.
-- Live hosted escalation cron execution and hosted `ESCALATION_CRON_SECRET` are **NOT VERIFIED**
-  (local code/config verification only).
-- Live provider verification and public deployment approval remain outstanding; the formal verdict
-  stays **FAIL — DO NOT DEPLOY** in `docs/RELEASE_READINESS.md`.
-- Secret audit (`docs/evidence/secret_audit.json`) recorded 16 workspace, 12 git-history and 453
+- Live hosted escalation cron invocation and hosted `ESCALATION_CRON_SECRET` are **NOT VERIFIED**
+  (schedule existence is verified via the live cron list).
+- Live provider verification and formal institutional approval remain outstanding; current verdict
+  is **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING** (`docs/evidence/phase5_live_verification_2026-11-24.json`). Netlify source sync is NOT VERIFIED.
+- Secret audit (`docs/evidence/secret_audit.json`) recorded 17 workspace, 12 git-history and 453
   docker-image potential secrets plus 4 current-local-env matches; no rotation or revocation was
   performed.
-- `npm audit` reports 6 vulnerabilities (2 moderate, 2 high, 2 critical); approved Next.js/Zod and
-  test-toolchain upgrades are pending. GHCR publication is blocked by missing `write:packages`.
+- The 6 historical `npm audit` findings were remediated; both audits report **0 vulnerabilities**.
+  GHCR publication is blocked by missing `write:packages`; the Docker Hub image is published and
+  anonymously pull-verified.
+- `release-v1` database was verified read-only: `neondb`, URL fingerprint `5d1fc726d19b`, host
+  fingerprint `141f6064ec7f`, Alembic `feedf21773e1`, 17 public tables, 4 departments, 0 users,
+  0 tickets, no writes; hosted equality/old DB state NOT VERIFIED.
 - Original zero-cost Gemini/Claude/n8n/Baileys/Sheets toolchain conflicts with the approved OpenAI
   BYOK architecture and are not claimed.
 

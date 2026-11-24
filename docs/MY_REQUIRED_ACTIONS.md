@@ -1,8 +1,9 @@
 # My Required Actions & External Operator Tasks
 
 **Project:** Smart Query Routing & Email Automation System  
-**Document Date:** 2026-11-23  
+**Document Date:** 2026-11-23; reconciled 2026-11-24  
 **Purpose:** Concise checklist of only the tasks that genuinely require the project owner, university supervisor, or an authorized deployment operator with external account access.  
+**Current status:** Technical release artifacts are published and verified; formal institutional/governance approval and live provider verification remain open. Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`. Current verdict: **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**. Some task descriptions below are historical; completed items are marked as such.  
 **Safety Rule:** Never paste real API keys, tokens, passwords, connection strings, or Fernet keys into chat, Git commits, or issue trackers.
 
 ---
@@ -23,9 +24,10 @@
 - **Risk:** Premature revocation of active credentials breaks live integrations; replacing `BYOK_ENCRYPTION_KEY` before running the re-encryption CLI makes stored personal keys unrecoverable.
 - **Verification:** Re-run `python scripts/secret_audit.py`; confirm old provider keys show disabled in provider consoles and new fingerprints differ from the baseline four fingerprints.
 
-### A2. Approve Semver-Major Frontend Dependency Upgrades (`npm audit`)
-- **Required Account:** Repository Owner / Technical Lead approval.
-- **Exact Instructions:**
+### A2. Approve Semver-Major Frontend Dependency Upgrades (`npm audit`) — COMPLETED 2026-11-24
+- **Status:** Done and verified — `vitest@4.1.12`, `zod@4.6.7`, `next@16.4.6`, `eslint-config-next@16.4.6`, `next build --webpack`; both audits report **0 vulnerabilities**. The commands below are historical reproduction steps; no further approval is needed for this item.
+- **Required Account:** Repository Owner / Technical Lead approval (already obtained for the completed work).
+- **Exact Instructions (historical):**
   1. Approve the major-version migration window for `next@16.4.6` (fixes nested `postcss@8.4.31`), `zod@4.6.7`, and `vitest@4.1.12` (fixes `@vitest/mocker` and `tinypool`).
   2. In `frontend-next/`, run:
      ```powershell
@@ -41,7 +43,7 @@
 ### A3. Supply `write:packages` Token If Publishing Updated Images to GHCR
 - **Required Account:** GitHub Account Owner (`raphicsdigitalsolutions`) with `write:packages` Personal Access Token.
 - **Exact Instructions:**
-  1. Note that `ghcr.io/raphicsdigitalsolutions/smart-query-system:latest` already exists and is anonymously pullable (`sha256:417e017081a460adfe310236e13b3e117cb972c11c5c93370968aa866a2b0f0f`), but current local working-tree changes are not pushed.
+  1. Note that `ghcr.io/raphicsdigitalsolutions/smart-query-system:latest` exists and is anonymously pullable at the historical digest `sha256:417e017081a460adfe310236e13b3e117cb972c11c5c93370968aa866a2b0f0f`; GHCR publication is still blocked. The current release image is on Docker Hub at `raphicsdigitalsolutions/smart-query-system:latest` / `:v1.0.0`, digest `sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177`, matching local and anonymously pull-verified.
   2. When ready to publish a pinned release tag, authenticate locally:
      ```powershell
      docker login ghcr.io -u <github-username>
@@ -110,7 +112,7 @@
 ### C3. Verify Hosted FR-07 SLA Cron, Target-Host Backup Restore, and Deployed ClamAV Scanner
 - **Required Account:** Hosting Platform Operator (Vercel / Container Host / Neon).
 - **Exact Instructions:**
-  1. Set `ESCALATION_CRON_SECRET` in the host secret manager and verify the hourly cron (`POST /api/v1/tickets/escalation/sweep` with `X-Cron-Secret`) escalates an overdue test ticket in the hosted environment.
+  1. Set `ESCALATION_CRON_SECRET` in the host secret manager and verify hosted invocation of the daily cron (`0 0 * * *`, `POST /api/v1/tickets/escalation/sweep` with `X-Cron-Secret`) escalates an overdue test ticket. The live cron list already shows one daily job; actual invocation is NOT VERIFIED. Hobby allows at most once/day.
   2. Run a backup/restore verification on a scratch database in the target hosting environment (`docs/OPERATOR_ACTION_CHECKLIST.md` §6).
   3. If attachment malware scanning is enforced in production, install ClamAV on the backend host and set `MALWARE_SCAN_ENABLED=true` and `MALWARE_SCAN_COMMAND="clamscan --no-summary {file}"`.
 - **Risk:** Without `ESCALATION_CRON_SECRET`, the serverless sweep endpoint fails closed with `503 escalation_cron_not_configured`; enabling `MALWARE_SCAN_ENABLED=true` without a scanner binary fails closed with `503 attachment_scan_unavailable`.
@@ -127,3 +129,14 @@ None of the items in Sections A, B, or C are required to run or present the comp
 3. **Paid OpenAI API Key:** Not required locally — `TKT-DEMO0001` is pre-seeded with a full grounded AI analysis (`KB-CS-101` citation, `94%` confidence) waiting at the Human Approval Gate so you can demonstrate `Approve & post reply` live in the browser at zero cost, while `TKT-DEMO0002` demonstrates the fail-closed BYOK guard (`402 ai_personal_key_required`).
 4. **GHCR Package Push (`write:packages`):** Not required locally — local Dockerfiles and `scripts/start_local_demo.ps1` run entirely from the local checkout.
 5. **Production Neon / Vercel / Netlify Access:** Not required and must not be connected during local demonstration — `backend/demo_server.py` uses an isolated disposable SQLite database (`frontend-next/.e2e/demo_local_test.db`).
+
+---
+
+## E. Release verification follow-ups (owner/operator, 2026-11-24)
+
+Current verdict: **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**. Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`.
+
+- **Netlify source sync — NOT VERIFIED:** public root and `/api/health` returned HTTP 200, but no token was available and the API returned 401. Live HTML uses Turbopack chunks while current main builds with webpack after `75d6f16`; do not claim the live site matches main. Confirm/redeploy from GitHub main if needed. Deploy ID `6b02db1360e3188d7f1074c6` could not be authenticated. No redeploy was performed.
+- **Vercel backend — verified:** deployment `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` READY/production/source CLI; aliases `smart-query-backend.vercel.app` and `smart-query-backend-inforaphicsdigital-8444.vercel.app`; metadata commit `b51dd31` with dirty CLI tree but deployed config already contains the daily cron and current `origin/main` (`2cb5595`) matches.
+- **release-v1 database — read-only:** `neondb`, URL fingerprint `5d1fc726d19b`, host fingerprint `141f6064ec7f`, Alembic `feedf21773e1`, 17 public tables, 4 departments, 0 users, 0 tickets, no writes. Branch identity from the operator-provided, git-ignored `backend/.env.release_v1` file name; hosted equality and old DB state NOT VERIFIED.
+- **Still NOT VERIFIED:** Google OAuth, SMTP, Meta WhatsApp, real-user BYOK, hosted cron invocation, university approval, hosted restore/malware scanner, monitoring/retention.

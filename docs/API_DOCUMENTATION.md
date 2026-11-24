@@ -1,5 +1,7 @@
 # API Reference (Phase 7 — FastAPI backend, Next.js BFF, BYOK AI)
 
+> **Current verified release status (2026-11-24):** Technical release artifacts are published and verified; formal institutional/governance approval and live provider verification remain open. Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`. Current verdict: **TECHNICAL RELEASE COMPLETE; FORMAL APPROVAL PENDING**.
+
 Base URL (local): `http://localhost:8000`
 
 All versioned routes are mounted under `http://localhost:8000/api/v1` (`API_V1_PREFIX`).
@@ -1028,10 +1030,11 @@ session/admin-authenticated and requires header `X-Cron-Secret: <ESCALATION_CRON
 endpoint fails closed: HTTP 503 `escalation_cron_not_configured` when no cron secret is configured,
 and HTTP 401 `invalid_cron_secret` for a missing or mismatched header (constant-time comparison; the
 secret is never logged). On success it returns the same `{ "success": true, "scanned": n,
-"escalated": m }` shape and is repeat-safe. `backend/vercel.json` configures an hourly call
-(`0 * * * *`) to this path. LOCAL VERIFIED: endpoint and configuration tests
-(`tests/test_escalation_serverless.py`). LIVE hosted cron execution is **NOT VERIFIED**; no provider
-scheduler or hosted setting was changed as part of this reconciliation.
+"escalated": m }` shape and is repeat-safe. `backend/vercel.json` configures a daily call
+(`0 0 * * *`) to this path; the live Vercel cron list shows exactly that one job (Hobby permits at
+most once/day). LOCAL VERIFIED: endpoint and configuration tests
+(`tests/test_escalation_serverless.py`). The schedule exists, but actual hosted invocation is
+**NOT VERIFIED**; no provider scheduler or hosted setting was changed as part of this reconciliation.
 
 ---
 
