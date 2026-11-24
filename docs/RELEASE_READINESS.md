@@ -13,7 +13,7 @@
 | Release target | Decision | Reason |
 | --- | --- | --- |
 | Technical release / live hackathon demonstration | **TECHNICAL RELEASE COMPLETE** | `origin/main` `2cb5595...` is clean and verified; Vercel production deployment `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` is READY with live backend smoke checks passing; Docker Hub `latest`/`v1.0.0` publish digest `sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177` with anonymous pull verified; final backend suite **229 passed, 17 warnings in 410.30s (0:06:50)**; frontend Vitest **3 passed**, typecheck/lint/build PASS (Next.js 16.4.6 webpack, **12/12** pages), Playwright + axe **12 passed in 2.0m** with no serious/critical violations, `npm audit` and `npm audit --omit=dev` **0 vulnerabilities**; daily `0 0 * * *` cron schedule verified; `release-v1` database verified read-only with `writes_performed=false`. |
-| Formal production / institutional release | **FORMAL APPROVAL PENDING — LIVE DEMONSTRATION; FORMAL SIGN-OFF NOT VERIFIED** | Formal institutional/governance sign-off and signed scope deviations are not on file; Google OAuth, SMTP, Meta WhatsApp, real-user OpenAI BYOK, hosted cron invocation, hosted restore/malware scanner, monitoring/retention, and Netlify authenticated deploy state/source sync are **NOT VERIFIED**; four historical current-local secret candidates still require owner review; published Vercel-to-`release-v1` `.env` database equality and old production database state are **NOT CLAIMED**. |
+| Formal production / institutional release | **FORMAL APPROVAL PENDING — LIVE DEMONSTRATION; FORMAL SIGN-OFF NOT VERIFIED** | Formal institutional/governance sign-off and signed scope deviations are not on file; Google OAuth, SMTP, Meta WhatsApp, real-user OpenAI BYOK, hosted cron invocation, hosted restore/malware scanner, monitoring/retention, and Netlify authenticated deploy state/source sync are **NOT VERIFIED**; four historical current-local secret candidates still require owner review; published Vercel-to-`release-v1` `.env` database equality is **NOT CLAIMED**; the original production database was previously checked read-only and not modified. |
 
 The code-level remediation and technical verification are complete. The remaining items are formal
 approval, live provider verification, operator-controlled secret review, and Netlify owner
@@ -59,8 +59,9 @@ of the isolated `release-v1` branch database: database `neondb`, URL fingerprint
 tables, `departments=4`, `users=0`, `tickets=0`, and `writes_performed=false`. Branch identity came
 from the operator-provided, git-ignored **`backend/.env.release_v1` file name**. Vercel withholds
 sensitive `DATABASE_URL` values and the Neon UI was unavailable, so **direct Vercel-to-`.env`
-equality is not claimed, and old production database state was not checked**. This verification does
-not rotate or expose any credential.
+equality is not claimed, and the original production database state was not re-checked here; that
+database was previously checked read-only and was not modified**. This verification does not rotate or
+expose any credential.
 
 ### Finding classification (2026-11-23)
 
@@ -196,7 +197,7 @@ release work itself is complete; these are governance/verification items.
 4. **Complete live provider verification** with real Google OAuth, SMTP, Meta WhatsApp, and real-user OpenAI BYOK credentials. None was available here; none is claimed.
 5. **Confirm the published Vercel backend** `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` and its single daily cron remain as recorded, and verify hosted cron *invocation* / escalation effect with `ESCALATION_CRON_SECRET`. Only the schedule (`0 0 * * *`) is verified; the old hourly `0 * * * *` was invalid on Vercel Hobby.
 6. **Netlify owner action:** confirm the deployed site and redeploy from GitHub `main` if needed. The public site returned HTTP 200 at `/` and `/api/health`, but the API returned 401 without a token, deploy ID `6b02db1360e3188d7f1074c6` could not be authenticated, and live Turbopack chunks differ from current main's webpack build — source sync is **NOT VERIFIED**. No redeploy was performed.
-7. **Confirm database identity through operator-controlled means.** The `release-v1` read-only verification used the git-ignored `backend/.env.release_v1` file name only; Vercel withholds `DATABASE_URL` and Neon UI was unavailable. Do not claim direct Vercel-to-`.env` equality or old production database state.
+7. **Confirm database identity through operator-controlled means.** The `release-v1` read-only verification used the git-ignored `backend/.env.release_v1` file name only; Vercel withholds `DATABASE_URL` and Neon UI was unavailable. Do not claim direct Vercel-to-`.env` equality. The original production database was previously checked read-only and not modified; its state was not re-checked here.
 8. **Prepare the container deployment plan** using the verified combined image `raphicsdigitalsolutions/smart-query-system:latest` / `:v1.0.0` (digest `sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177`). The external Compose volume `smartquerysystem_smartquery_postgres_data` is host-specific and must never be deleted.
 9. **Deploy/configure monitoring, retention, and malware scanning** if the original brief's clauses are enforced. Local disposable restore (PASS) and real ClamAV integration (`PASS_LOCAL_INTEGRATION_ONLY`) are complete, but `MALWARE_SCAN_ENABLED=false` by default, no hosted scanner is deployed, and hosted restore/monitoring/retention are NOT VERIFIED.
 10. **Optional registry publication:** the current Docker Hub release is published and anonymously pull-verified. Publishing current changes to GHCR still requires `write:packages`; no GHCR registry content was changed.

@@ -7,7 +7,7 @@ $root = (git rev-parse --show-toplevel).Trim()
 $submission = Join-Path $root 'submission'
 $package = Join-Path $submission 'SmartQuerySystem_Final_Submission'
 $zip = Join-Path $submission 'SmartQuerySystem_Final_Submission.zip'
-$evidence = Join-Path $root 'docs\evidence\final_submission_package_2026-11-24.json'
+$artifactHashFile = Join-Path $submission 'ARTIFACT_SHA256.txt'
 $commit = (git rev-parse HEAD).Trim()
 
 Write-Host "Building submission package from $commit"
@@ -129,41 +129,43 @@ $slidesHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $submissio
 $secretFiles = @($packageFiles | Where-Object { $_.Name -like '.env*' -and $_.Name -ne '.env.example' -or $_.Extension -in @('.key', '.pem', '.pfx', '.p12', '.db', '.sqlite', '.dump') })
 $dependencyDirs = @(Get-ChildItem -LiteralPath $package -Recurse -Directory | Where-Object { $_.Name -in @('node_modules', '.venv', '__pycache__', '.next', '.e2e') })
 
-$verification = [ordered]@{
-    package = 'Smart Query Routing System - Final Hackathon Submission'
-    generated_at_local = $generatedAt
-    source_commit = $commit
-    source_branch = 'main'
-    archive = 'submission/SmartQuerySystem_Final_Submission.zip'
-    archive_sha256 = $zipHash
-    archive_bytes = (Get-Item -LiteralPath $zip).Length
-    archive_entry_paths = 'forward-slash relative paths'
-    package_directory = 'submission/SmartQuerySystem_Final_Submission'
-    files_in_package = $packageFiles.Count
-    evidence_files = @($packageFiles | Where-Object { $_.FullName -like '*\docs\evidence\*' }).Count
-    env_examples_included = $envExamples.Count
-    secret_or_binary_files = $secretFiles.Count
-    dependency_directories = $dependencyDirs.Count
-    submission_entries_in_archive = 0
-    pdf_hashes = @{
-        'submission/HACKATHON_DEPLOYMENT_REPORT.pdf' = $reportHash
-        'submission/HACKATHON_DEPLOYMENT_SLIDES.pdf' = $slidesHash
-    }
-    limitations = @(
-        'The archive is a gitignored local deliverable; builder source is scripts/build_submission_package.ps1.',
-        'Regenerating the archive after a new commit or timestamp changes the SHA-256 hash; verify against this evidence file.'
-    )
+$hashPattern = '^[0-9a-f]{64}$'
+$hashChecks = [ordered]@{
+    zip_sha256_64_hex = [bool]($zipHash -cmatch $hashPattern)
+    report_pdf_sha256_64_hex = [bool]($reportHash -cmatch $hashPattern)
+    slides_pdf_sha256_64_hex = [bool]($slidesHash -cmatch $hashPattern)
 }
-[System.IO.File]::WriteAllText($evidence, ($verification | ConvertTo-Json -Depth 8), $enc)
+if ($hashChecks.Values -contains $false) {
+    throw 'One or more artifact hashes are not 64-character lowercase hexadecimal strings.'
+}
+
+$artifactLines = @(
+    'Final submission artifact SHA-256 values (64 lowercase hexadecimal characters)'
+    'Generated after archive rebuild; this file is gitignored and is not inside the ZIP.'
+    ''
+    "source_commit=$commit"
+    "zip_sha256=$zipHash"
+    "zip_bytes=$((Get-Item -LiteralPath $zip).Length)"
+    "report_pdf_sha256=$reportHash"
+    "slides_pdf_sha256=$slidesHash"
+    ''
+    "zip_sha256_64_hex=$($hashChecks.zip_sha256_64_hex)"
+    "report_pdf_sha256_64_hex=$($hashChecks.report_pdf_sha256_64_hex)"
+    "slides_pdf_sha256_64_hex=$($hashChecks.slides_pdf_sha256_64_hex)"
+)
+[System.IO.File]::WriteAllLines($artifactHashFile, $artifactLines, $enc)
 
 [pscustomobject]@{
     source_commit = $commit
     files_in_package = $packageFiles.Count
-    evidence_files = $verification.evidence_files
+    evidence_files = @($packageFiles | Where-Object { $_.FullName -like '*\docs\evidence\*' }).Count
     env_examples_included = $envExamples.Count
-    zip_bytes = $verification.archive_bytes
+    zip_bytes = (Get-Item -LiteralPath $zip).Length
     zip_sha256 = $zipHash
+    report_pdf_sha256 = $reportHash
+    slides_pdf_sha256 = $slidesHash
+    hash_checks = $hashChecks
     secret_or_binary_files = $secretFiles.Count
     dependency_directories = $dependencyDirs.Count
-    evidence_json = $evidence
+    artifact_hash_file = $artifactHashFile
 } | ConvertTo-Json -Depth 4

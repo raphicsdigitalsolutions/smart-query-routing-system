@@ -12,7 +12,7 @@ This is the authoritative reconciliation for the Smart Query Routing & Email Aut
 - Branch: `main`
 - Release-evidence commit: `2cb5595ee7a38c85c63223079dc9d17a290ed089`
 - Documentation reconciliation commit: `9399508fda3a183cf145db2564434c132b8a8487`
-- Submission package source commit and archive hash: `docs/evidence/final_submission_package_2026-11-24.json`
+- Submission package source commit is in the archive `RELEASE_MANIFEST.json`; ZIP/PDF SHA-256 values are in `submission/ARTIFACT_SHA256.txt`; inventory: `docs/evidence/final_submission_package_2026-11-24.json`
 - `HEAD` and `origin/main` matched after each pushed verification/documentation commit; working trees were clean at those checks.
 - Commit chain:
   - `b51dd31` — prior release baseline.
@@ -56,7 +56,7 @@ Read-only verification used the operator-provided, git-ignored `backend/.env.rel
 | Tickets | 0 |
 | Writes | none |
 
-Branch identity is taken from the `.env.release_v1` file name. Vercel withholds sensitive `DATABASE_URL` values and the Neon UI session was unavailable, so direct Vercel-to-file equality and the old production database state are **not claimed**.
+Branch identity is taken from the `.env.release_v1` file name. Vercel withholds sensitive `DATABASE_URL` values and the Neon UI session was unavailable, so direct Vercel-to-file equality is **not claimed**. The original production database was previously checked read-only and not modified; this release-v1 check did not re-check it.
 
 ## Vercel backend
 
@@ -103,9 +103,9 @@ The older digest `sha256:e9ed70810b3f9e5c6bb5ee1e7fb83847acb423c18a2bb506d9e83a5
 ## Submission package (2026-11-24)
 
 - Builder: `scripts/build_submission_package.ps1`.
-- Source commit, archive SHA-256, ZIP byte size, PDF hashes, and file counts are recorded in `docs/evidence/final_submission_package_2026-11-24.json`.
-- The package includes clean tracked source, documentation, 4 `.env.example` templates, migrations, and 28 evidence files. It excludes non-template `.env` variants, `.venv`, `node_modules`, `.next`, `.e2e`, caches, key files, and database dumps.
-- `submission/` is gitignored: the folder and ZIP are local deliverables, not committed source. Re-running the builder after a new commit or timestamp produces a new archive hash; verify against the evidence file.
+- Source commit is recorded in the archive's `RELEASE_MANIFEST.json`. ZIP/PDF SHA-256 values, byte size, and file counts are recorded in `submission/ARTIFACT_SHA256.txt` and the inventory at `docs/evidence/final_submission_package_2026-11-24.json`.
+- The package includes clean tracked source, documentation, 4 `.env.example` templates, migrations, and 29 evidence files. It excludes non-template `.env` variants, `.venv`, `node_modules`, `.next`, `.e2e`, caches, key files, and database dumps.
+- `submission/` is gitignored: the folder, ZIP, and `ARTIFACT_SHA256.txt` are local deliverables, not committed source. Re-running the builder after a new commit produces a new archive hash; verify against `submission/ARTIFACT_SHA256.txt`.
 
 ## Explicitly not verified
 

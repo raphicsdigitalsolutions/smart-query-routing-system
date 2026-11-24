@@ -18,6 +18,6 @@
   "non_actions": [
     "No production user, ticket, email, WhatsApp message or external notification was created.",
     "No environment variable, provider configuration, database content or schema was modified.",
-    "The old production database was not accessed by this check."
+    "The original production database had been checked read-only earlier and was not modified; this release-v1 check did not re-check it."
   ]
 }
