@@ -1,0 +1,26 @@
+{
+    "image":  "smart-query-system:release-2026-11-24",
+    "container_name":  "smartquery-release-check",
+    "test_config":  "disposable SQLite database; RUN_MIGRATIONS=false; email/WhatsApp/background worker disabled",
+    "docker_health_status":  "healthy",
+    "uid":  "10001",
+    "supervisor_status":  "backend                          RUNNING   pid 8, uptime 0:00:12\nfrontend                         RUNNING   pid 9, uptime 0:00:12",
+    "http_checks":  [
+                        {
+                            "name":  "backend_health",
+                            "status_code":  200
+                        },
+                        {
+                            "name":  "frontend_login",
+                            "status_code":  200
+                        },
+                        {
+                            "name":  "frontend_api_health",
+                            "status_code":  200
+                        },
+                        {
+                            "name":  "frontend_session",
+                            "status_code":  200
+                        }
+                    ]
+}

@@ -1,0 +1,16 @@
+[
+    {
+        "tag":  "latest",
+        "digest":  "sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177",
+        "last_updated":  "2026-11-24T05:55:50.822402Z",
+        "media_type":  "application/vnd.oci.image.index.v1+json",
+        "full_size":  339911983
+    },
+    {
+        "tag":  "v1.0.0",
+        "digest":  "sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177",
+        "last_updated":  "2026-11-24T05:55:56.219567Z",
+        "media_type":  "application/vnd.oci.image.index.v1+json",
+        "full_size":  339911983
+    }
+]

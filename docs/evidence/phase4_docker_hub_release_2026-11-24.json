@@ -1,0 +1,65 @@
+{
+  "phase": "PHASE 4 - DOCKER HUB RELEASE",
+  "status": "PASS",
+  "repository": "raphicsdigitalsolutions/smart-query-system",
+  "source_commit": "7ad663effcf0f9e6d138708c2e25c3f8bff7b66f",
+  "local_image": "smart-query-system:release-2026-11-24",
+  "published_tags": [
+    {
+      "tag": "latest",
+      "digest": "sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177",
+      "last_updated": "2026-11-24T05:55:50.822402Z"
+    },
+    {
+      "tag": "v1.0.0",
+      "digest": "sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177",
+      "last_updated": "2026-11-24T05:55:56.219567Z"
+    }
+  ],
+  "final_digest": "sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177",
+  "local_repo_digests_match_hub": true,
+  "image_configuration": {
+    "user": "app",
+    "uid": 10001,
+    "exposed_ports": [
+      "3000/tcp",
+      "8000/tcp"
+    ],
+    "healthcheck": "Checks backend http://127.0.0.1:8000/health and frontend http://127.0.0.1:3000/api/health every 30s",
+    "command": [
+      "supervisord",
+      "-c",
+      "/etc/supervisor/conf.d/supervisord.conf"
+    ]
+  },
+  "container_smoke": {
+    "status": "PASS",
+    "evidence": "docs/evidence/docker_container_smoke_2026-11-24.json",
+    "config": "Disposable SQLite database, RUN_MIGRATIONS=false, email/WhatsApp/background worker disabled, no production connection",
+    "health": "healthy",
+    "supervisor": "backend and frontend RUNNING",
+    "http_statuses": {
+      "backend_health": 200,
+      "frontend_login": 200,
+      "frontend_api_health": 200,
+      "frontend_session": 200
+    }
+  },
+  "anonymous_pull": {
+    "status": "PASS",
+    "evidence": "docs/evidence/docker_hub_anonymous_pull_2026-11-24.json"
+  },
+  "tag_metadata_evidence": "docs/evidence/docker_hub_tag_metadata_2026-11-24.json",
+  "build_log": "docs/evidence/docker_build_release_2026-11-24.log",
+  "dockerfile_check": "docker build --check . completed with no warnings",
+  "embedded_secrets": {
+    "env_files_in_image": 0,
+    "key_files_in_image": 0,
+    "note": "A pattern scan found only Next.js documentation/library strings, which are not credential values."
+  },
+  "non_actions": [
+    "No production database, Vercel, Netlify, DNS, billing or provider integration was modified.",
+    "No credential was pasted, printed or stored in the repository.",
+    "No existing Docker Hub tag was deleted; latest and v1.0.0 were overwritten by an authorized push."
+  ]
+}

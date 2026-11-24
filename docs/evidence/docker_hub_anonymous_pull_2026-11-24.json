@@ -1,0 +1,12 @@
+{
+  "check": "Docker Hub anonymous pull verification",
+  "repository": "raphicsdigitalsolutions/smart-query-system",
+  "digest": "sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177",
+  "pull_command": "docker --config <temporary-empty-config> pull raphicsdigitalsolutions/smart-query-system@sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177",
+  "temporary_config_contained_no_credentials": true,
+  "anonymous_pull_exit_code": 0,
+  "anonymous_pull_result": "Digest matched; image reported up to date from Docker Hub.",
+  "anonymous_registry_manifest_http_status": 200,
+  "credential_disclosure": "No username, password, token or auth header value was printed or stored.",
+  "local_docker_config_modified": false
+}
