@@ -83,7 +83,7 @@
     "decision": "Preserve the daily expression 0 0 * * * and commit it to main so repository source matches the verified deployment and Hobby plan constraint. Do not revert to hourly."
   },
   "non_actions": [
-    "No commit, push, tag, branch, deploy, redeploy, environment-variable change, registry write, production database access, credential rotation, or destructive operation was performed during this audit.",
+    "No commit, push, tag, branch, deploy, redeploy, environment-variable change, registry write, production database modification, credential rotation, or destructive operation was performed during this audit; the original production database had been checked read-only earlier and was not modified.",
     "No .env file contents were read or printed.",
     "Vercel CLI calls were read-only inspect/list/api GET operations."
   ]

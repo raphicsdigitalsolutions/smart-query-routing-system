@@ -6,7 +6,7 @@
   "archive": "submission/SmartQuerySystem_Final_Submission.zip",
   "archive_entry_paths": "forward-slash relative paths",
   "package_directory": "submission/SmartQuerySystem_Final_Submission",
-  "files_in_package": 395,
+  "files_in_package": 396,
   "evidence_files": 29,
   "env_examples_included": 4,
   "secret_or_binary_files": 0,
@@ -24,8 +24,8 @@
     "key files"
   ],
   "pdf_hashes": {
-    "submission/HACKATHON_DEPLOYMENT_REPORT.pdf": "834dd7bda431a7a4f75a5a6007b5259c1b6574fdd7f8d519936fce2c965f572c",
-    "submission/HACKATHON_DEPLOYMENT_SLIDES.pdf": "6468311f0aad5e87c10f6a0231205dcffd643abf29a1fa7b72966899ff7235350b95add4a15465a3291f8d2c66d"
+    "submission/HACKATHON_DEPLOYMENT_REPORT.pdf": "e0d7309416eee5a92ac4124630167e4a641ee589ed962d2132b9f129e55cd232",
+    "submission/HACKATHON_DEPLOYMENT_SLIDES.pdf": "7244e8bf1318ce1d5dd35b574d122877a306f917c02b2c21c85c1315cc54180b"
   },
   "limitations": [
     "The archive and its hash file are gitignored local deliverables; builder source is scripts/build_submission_package.ps1.",

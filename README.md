@@ -492,8 +492,9 @@ verification below; see `docs/RELEASE_READINESS.md` for the current disposition.
 >   `sha256_12 5d1fc726d19b`, host fingerprint `141f6064ec7f`, Alembic `feedf21773e1`, 17 public
 >   tables, `departments=4`, `users=0`, `tickets=0`, `writes_performed=false`. Branch identity came from
 >   the operator-provided, git-ignored `backend/.env.release_v1` filename; Vercel withholds sensitive
->   `DATABASE_URL` values and the Neon UI was unavailable. Direct Vercel-to-`.env` equality and old
->   production database state are **NOT** claimed.
+>   `DATABASE_URL` values and the Neon UI was unavailable. Direct Vercel-to-`.env` equality is **NOT**
+>   claimed. The original production database was previously checked read-only and not modified; this
+>   release-v1 check did not re-check it.
 
 ## Migration considerations
 

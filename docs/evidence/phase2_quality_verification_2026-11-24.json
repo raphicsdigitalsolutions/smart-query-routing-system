@@ -61,7 +61,7 @@
     "heads": "feedf21773e1 (head)",
     "current_local_configured_database": "feedf21773e1 (head)",
     "check": "No new upgrade operations detected.",
-    "note": "The local configured database was queried read-only; no migration was applied and no production database was touched."
+    "note": "The local configured database was queried read-only; no migration was applied and no production database was modified. The original production database had been checked read-only earlier and was not modified."
   },
   "live_backend_readonly": {
     "evidence": "docs/evidence/live_backend_readonly_smoke_2026-11-24.json",
@@ -92,7 +92,7 @@
     ],
     "not_claimed": [
       "The Vercel Production DATABASE_URL value matched the local .env.release_v1 value by direct comparison; Vercel withholds sensitive values.",
-      "Old production database state after the environment switch.",
+      "Original production database state after the environment switch was not re-checked here; that database had been checked read-only earlier and was not modified.",
       "Any production write, user creation or ticket creation."
     ]
   },

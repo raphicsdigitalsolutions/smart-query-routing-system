@@ -122,7 +122,8 @@ provisioning path.
   anonymously pull-verified.
 - `release-v1` database was verified read-only: `neondb`, URL fingerprint `5d1fc726d19b`, host
   fingerprint `141f6064ec7f`, Alembic `feedf21773e1`, 17 public tables, 4 departments, 0 users,
-  0 tickets, no writes; hosted equality/old DB state NOT VERIFIED.
+  0 tickets, no writes; hosted equality not verified. Original production database previously checked
+  read-only and not modified; not re-checked here.
 - Original zero-cost Gemini/Claude/n8n/Baileys/Sheets toolchain conflicts with the approved OpenAI
   BYOK architecture and are not claimed.
 

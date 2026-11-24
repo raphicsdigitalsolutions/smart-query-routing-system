@@ -162,6 +162,6 @@ shortcut. Full operator detail is in `docs/OPERATOR_ACTION_CHECKLIST.md` §2B an
 ## 6. Explicit non-actions
 
 - No GitHub remote, branch, commit, tag, push, deployment or container registry content was changed.
-- No production database was accessed or modified.
+- No production database was modified; the original production database had been checked read-only earlier.
 - No provider console, billing setting, API key, token, password or encryption key was changed.
 - No secret value appears in this plan, the audit output, tests, or the final status report.

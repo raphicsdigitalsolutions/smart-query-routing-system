@@ -186,7 +186,7 @@ def build_report():
         [
             ["Frontend + BFF", "https://smart-query-routing-system.netlify.app", "Public HTTP 200; deploy sync unconfirmed"],
             ["Backend API", "https://smart-query-backend.vercel.app", f"READY; {VERCEL_DEPLOY}"],
-            ["Database", "Neon PostgreSQL release-v1", "Read-only verified; old production DB not accessed"],
+            ["Database", "Neon PostgreSQL release-v1", "Read-only verified; original production DB checked read-only earlier, not modified"],
             ["Container", "raphicsdigitalsolutions/smart-query-system", f"latest and v1.0.0 at {DIGEST}"],
         ],
         [27 * mm, 72 * mm, 71 * mm], s,
@@ -225,7 +225,9 @@ def build_report():
     story.append(p(
         "Branch identity is taken from the operator-provided git-ignored backend/.env.release_v1 "
         "file name. Vercel withholds sensitive DATABASE_URL values and the Neon UI session was "
-        "unavailable, so direct Vercel-to-file equality and old-production-database state are not claimed.",
+        "unavailable, so direct Vercel-to-file equality is not claimed. The original production "
+        "database was previously checked read-only and not modified; this release-v1 check did not "
+        "re-check it.",
         s["BodyX"],
     ))
 

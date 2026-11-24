@@ -344,12 +344,14 @@ remains BLOCKED pending `write:packages`.
       verification found `neondb`, URL fingerprint `5d1fc726d19b`, host fingerprint
       `141f6064ec7f`, Alembic `feedf21773e1`, 17 public tables, 4 departments, 0 users, 0 tickets,
       no writes. Branch identity came from the git-ignored `backend/.env.release_v1` file name;
-      hosted equality and old DB state are NOT VERIFIED.
+      hosted equality is NOT VERIFIED. Original production database previously checked read-only and
+      not modified; its state was not re-checked here.
 
 ## 10. Explicit non-actions of the 2026-11-23 audit
 
 No commit, push, branch, tag, deployment, registry write, DNS/TLS change, provider registration,
-billing change, GitHub remote change, production database access/modification, credential
-rotation/revocation, or destructive working-tree change was performed. The Playwright/axe E2E files
+billing change, GitHub remote change, production database modification, credential
+rotation/revocation, or destructive working-tree change was performed. The original production
+database had been checked read-only earlier and was not modified. The Playwright/axe E2E files
 were untracked working-tree files at that time; they are now committed on current `origin/main`
 (`2cb5595`), as noted in §9.

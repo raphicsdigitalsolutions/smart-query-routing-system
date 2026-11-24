@@ -4,8 +4,10 @@
 
 **Document date:** 2026-11-23; reconciled 2026-11-24  
 **Scope (2026-11-23 reconciliation; current state in §9):** Local-only final release-blocker reconciliation. No commit, push, tag, branch, deployment,
-registry write, production database access, billing change, or credential rotation/revocation was
-performed at that time.  
+registry write, production database modification, billing change, or credential rotation/revocation was
+performed at that time. The original production database had been checked read-only earlier and was not
+modified.
+
 **Authority:** The original brief `C:\Users\user\Downloads\AllProjectsS26.pdf` remains authoritative.
 The in-repo proposal PDF is a derived blueprint, not institutional approval.  
 **Companion runbook:** `docs/OPERATOR_ACTION_CHECKLIST.md` contains operator-owned actions and exact
@@ -175,8 +177,9 @@ Local PASS never implies live provider, hosted scheduler, registry or governance
 ## 8. Explicit non-actions of the 2026-11-23 reconciliation (historical)
 
 No commit, push, branch, tag, deployment, DNS/TLS change, provider registration, billing change,
-GitHub remote change, registry write, production database access/modification, credential
+GitHub remote change, registry write, production database modification, credential
 rotation/revocation, or destructive working-tree change was performed while producing this document.
+The original production database had been checked read-only earlier and was not modified.
 The E2E files were untracked working-tree files at that time; they are now committed on current main
 (see §9).
 
@@ -187,7 +190,7 @@ Authoritative evidence: `docs/evidence/phase5_live_verification_2026-11-24.json`
 - **Git:** release-evidence commit `2cb5595ee7a38c85c63223079dc9d17a290ed089`; chain `b51dd31` → `7ad663e` (daily cron + Phase 1/2 evidence) → `eb30f92` (Docker Hub evidence) → `2cb5595` (live verification evidence); clean working tree after that commit.
 - **Backend live:** Vercel `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` READY/production/source CLI, aliases `smart-query-backend.vercel.app` and `smart-query-backend-inforaphicsdigital-8444.vercel.app`. Metadata commit `b51dd31` with dirty CLI working tree; deployed config already contains the daily cron and current main matches. Final schedule `0 0 * * *` for `/api/v1/tickets/escalation/sweep`; live cron list shows exactly that one job, but actual hosted invocation is NOT VERIFIED. Live `/health`, `/api/v1/status`, `/api/v1/status/database` HTTP 200; `/api/v1/departments` HTTP 401 expected.
 - **Frontend live caveat:** Netlify public root and `/api/health` HTTP 200, but authenticated deploy state and source sync NOT VERIFIED (no token; API 401). Live HTML uses Turbopack chunks while current main builds with webpack after `75d6f16`; do not claim the live site matches current main. Deploy `6b02db1360e3188d7f1074c6` cannot be authenticated/confirmed. Owner action: confirm/redeploy from GitHub main. No redeploy was performed.
-- **Database:** `release-v1` read-only — `neondb`, URL fingerprint `5d1fc726d19b`, host fingerprint `141f6064ec7f`, Alembic `feedf21773e1`, 17 public tables, 4 departments, 0 users, 0 tickets, no writes. Branch identity from the operator-provided, git-ignored `backend/.env.release_v1` file name; Vercel sensitive values withheld and Neon UI unavailable, so direct equality and old DB state are NOT VERIFIED.
+- **Database:** `release-v1` read-only — `neondb`, URL fingerprint `5d1fc726d19b`, host fingerprint `141f6064ec7f`, Alembic `feedf21773e1`, 17 public tables, 4 departments, 0 users, 0 tickets, no writes. Branch identity from the operator-provided, git-ignored `backend/.env.release_v1` file name; Vercel sensitive values withheld and Neon UI unavailable, so direct equality is NOT VERIFIED. Original production database previously checked read-only and not modified; not re-checked here.
 - **Image:** Docker Hub `raphicsdigitalsolutions/smart-query-system:latest` / `:v1.0.0` digest `sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177` matching the local image (old `sha256:e9ed708…` is stale). Anonymous pull with a temporary empty Docker config exit 0, anonymous manifest HTTP 200; container smoke healthy, UID 10001, Supervisor backend+frontend RUNNING, 4 HTTP checks 200 with disposable SQLite/no external integrations; no `.env` or key files in image.
 - **Final verification:** backend 229 passed, 17 warnings in 410.30s (0 failed/errors); Vitest 3 passed; lint/typecheck PASS; build PASS (Next.js 16.4.6 webpack, 12/12 pages); Playwright + axe 12 passed in 2.0m; `npm audit` and `npm audit --omit=dev` 0 vulnerabilities; Compose configs and `docker build --check` PASS; Alembic head/current `feedf21773e1`, check clean.
 - **NOT VERIFIED:** Google OAuth, SMTP, Meta WhatsApp, real-user BYOK, hosted cron invocation, university approval, hosted restore/malware scanner, monitoring/retention.
