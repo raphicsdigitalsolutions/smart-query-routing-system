@@ -168,7 +168,7 @@ def build_report():
         ["Area", "Verified status"],
         [
             ["GitHub", f"origin/main {COMMIT}; clean tree after release evidence commits"],
-            ["Backend API (Vercel)", f"READY production deployment {VERCEL_DEPLOY}; aliases live"],
+            ["Backend API (Vercel)", f"READY production deployment {VERCEL_DEPLOY}; primary alias live, secondary Vercel-protected"],
             ["Cron configuration", "One daily cron at 0 0 * * *; Hobby-compatible; hosted invocation not verified"],
             ["Database (Neon)", "release-v1 read-only PASS: 17 tables, 4 departments, 0 users, 0 tickets, no writes"],
             ["Frontend (Netlify)", "Public root and /api/health HTTP 200; authenticated deploy state and source sync NOT VERIFIED"],

@@ -65,7 +65,7 @@ Branch identity is taken from the `.env.release_v1` file name. Vercel withholds 
 - State: `READY`, target `production`, source `cli`
 - Aliases:
   - `https://smart-query-backend.vercel.app`
-  - `https://smart-query-backend-inforaphicsdigital-8444.vercel.app`
+  - `https://smart-query-backend-inforaphicsdigital-8444.vercel.app` (Vercel-login protected; not a public submission URL)
 - Deployment metadata points to commit `b51dd31` with a dirty CLI working tree; the deployed config already contained the final daily cron. Current `main` now matches.
 - Live cron list contains exactly one job: `/api/v1/tickets/escalation/sweep` at `0 0 * * *`.
 - Vercel Hobby permits at most once-per-day cron execution; the previous hourly expression `0 * * * *` is invalid for this plan. Do not revert it.

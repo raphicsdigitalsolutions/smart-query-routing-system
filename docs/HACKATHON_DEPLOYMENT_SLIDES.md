@@ -14,7 +14,7 @@ No secret values, tokens, or connection strings appear in this deck.
 - Frontend/BFF: Netlify Free — `https://smart-query-routing-system.netlify.app`
 - Netlify deploy ID `6b02db1360e3188d7f1074c6` is **historical/unconfirmed**: authenticated deploy state and source sync NOT VERIFIED (API 401); live HTML uses Turbopack chunks while current main builds with webpack
 - Backend: Vercel Hobby — `https://smart-query-backend.vercel.app`
-- Deploy: `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` — READY, production, source CLI; aliases `smart-query-backend.vercel.app` and `smart-query-backend-inforaphicsdigital-8444.vercel.app`
+- Deploy: `dpl_CRo9kXq4CBL8p8oSaaAyKdSjNVoM` — READY, production, source CLI; aliases `smart-query-backend.vercel.app` and `smart-query-backend-inforaphicsdigital-8444.vercel.app` (Vercel-login protected; public HTTP not verified)
 - Database: Neon `release-v1` — 17 public tables, 4 departments, 0 users, 0 tickets — `feedf21773e1` (read-only verified; no writes)
 - Docker Hub: `raphicsdigitalsolutions/smart-query-system:latest` / `:v1.0.0` digest `sha256:2cf0a5dea54dffd643abf29a1fa7b72966899ff7235350b95fe1da793c9c2177`, anonymous pull verified; GHCR push still BLOCKED by missing `write:packages`
 

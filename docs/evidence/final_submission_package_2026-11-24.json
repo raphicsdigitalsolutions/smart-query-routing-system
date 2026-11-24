@@ -24,8 +24,8 @@
     "key files"
   ],
   "pdf_hashes": {
-    "submission/HACKATHON_DEPLOYMENT_REPORT.pdf": "e0d7309416eee5a92ac4124630167e4a641ee589ed962d2132b9f129e55cd232",
-    "submission/HACKATHON_DEPLOYMENT_SLIDES.pdf": "7244e8bf1318ce1d5dd35b574d122877a306f917c02b2c21c85c1315cc54180b"
+    "submission/HACKATHON_DEPLOYMENT_REPORT.pdf": "b30285f9318382021523e06f36c25bf71cbfeddad7da2c79107e98121fee3f54",
+    "submission/HACKATHON_DEPLOYMENT_SLIDES.pdf": "34c3dc85b22bd4334b0b635d3915819e93d4ea1c23cb0e2d224a8b1728ccd0d3"
   },
   "limitations": [
     "The archive and its hash file are gitignored local deliverables; builder source is scripts/build_submission_package.ps1.",
