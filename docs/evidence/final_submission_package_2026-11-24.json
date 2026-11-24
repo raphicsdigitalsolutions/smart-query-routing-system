@@ -1,0 +1,25 @@
+{
+    "package":  "Smart Query Routing System - Final Hackathon Submission",
+    "generated_at_local":  "2026-11-24T11:25:36+05:00",
+    "source_commit":  "04ddd4cd0089ec4a5385dce586544bc5c642dc38",
+    "source_branch":  "main",
+    "archive":  "submission/SmartQuerySystem_Final_Submission.zip",
+    "archive_sha256":  "bc3a33e2f303c8ccf1f6c174e275097e1cdff304ffff11e98dfcdfc55630c1e5",
+    "archive_bytes":  932923,
+    "archive_entry_paths":  "forward-slash relative paths",
+    "package_directory":  "submission/SmartQuerySystem_Final_Submission",
+    "files_in_package":  394,
+    "evidence_files":  28,
+    "env_examples_included":  4,
+    "secret_or_binary_files":  0,
+    "dependency_directories":  0,
+    "submission_entries_in_archive":  0,
+    "pdf_hashes":  {
+                       "submission/HACKATHON_DEPLOYMENT_REPORT.pdf":  "834dd7bda431a7a4f75a5a6007b5259c1b6574fdd7f8d519936fce2c965f572c",
+                       "submission/HACKATHON_DEPLOYMENT_SLIDES.pdf":  "6468311f0aad5e87c10f6a0231205dcf963138f95add4a15465a3291f8d2c66d"
+                   },
+    "limitations":  [
+                        "The archive is a gitignored local deliverable; builder source is scripts/build_submission_package.ps1.",
+                        "Regenerating the archive after a new commit or timestamp changes the SHA-256 hash; verify against this evidence file."
+                    ]
+}
